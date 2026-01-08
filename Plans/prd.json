@@ -56,8 +56,8 @@
     ],
     "priority": "critical",
     "category": "backend",
-    "status": "pending",
-    "passes": false
+    "status": "completed",
+    "passes": true
   },
   {
     "id": 64,

@@ -5,6 +5,33 @@
 - FRONTEND_URL is `https://d3hd7mj8z35qoh.cloudfront.net`
 - API Gateway URL is `https://xehi9a6w6e.execute-api.eu-central-1.amazonaws.com/prod`
 - Parameter Store prefix is `/shopify/duxly-connection`
+- OAuth callback redirects to `https://admin.shopify.com/store/{shop}/apps/{api_key}` (Shopify embedded app pattern), not to FRONTEND_URL directly
+
+---
+
+## 2026-01-08 - Story 63
+Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
+- **What was verified:**
+  - /auth endpoint returns HTTP 302 redirect to Shopify OAuth with:
+    - Correct client_id: `5f284173d68eb2e02820df78902402a0`
+    - Correct scopes: `read_products,write_products,read_orders`
+    - Correct redirect_uri: `https://xehi9a6w6e.execute-api.eu-central-1.amazonaws.com/prod/callback`
+    - State cookie set properly with HttpOnly, Secure, SameSite=Lax
+  - /callback endpoint validation working correctly:
+    - Returns 400 for missing required parameters (code, hmac, shop)
+    - Returns 403 for invalid HMAC signature
+    - Has proper environment variables configured (SHOPIFY_API_KEY, SHOPIFY_API_SECRET, PARAMETER_STORE_PREFIX, APP_URL, FRONTEND_URL)
+  - Callback redirect goes to Shopify admin embedded app URL on success
+  - CloudWatch logs show no errors - all invocations complete successfully (2ms avg)
+
+- **Files changed:**
+  - `/Users/timmatser/Dev/duxly-connection/Plans/prd.json` - Marked Story 63 as passes: true
+
+- **Learnings for future iterations:**
+  - OAuth callback correctly redirects to Shopify admin embedded app URL, not directly to FRONTEND_URL
+  - HMAC verification requires all query params except `hmac` and `signature` sorted alphabetically
+  - Lambda CloudWatch log group naming: `/aws/lambda/duxly-connection-{FunctionName}-{suffix}`
+  - Use `aws logs filter-log-events --filter-pattern "ERROR"` to quickly find error logs
 
 ---
 
