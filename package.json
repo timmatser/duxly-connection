@@ -1,0 +1,22 @@
+{
+  "name": "shopify-app-template",
+  "version": "1.0.0",
+  "description": "Serverless Shopify app template with AWS Lambda and Parameter Store integration",
+  "main": "index.js",
+  "scripts": {
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd backend && npm install",
+    "build:frontend": "cd frontend && npm install && npm run build",
+    "deploy": "cd infrastructure && npm run deploy",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "shopify",
+    "aws",
+    "lambda",
+    "serverless",
+    "parameter-store"
+  ],
+  "author": "",
+  "license": "MIT"
+}
