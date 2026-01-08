@@ -8,6 +8,36 @@
 
 ---
 
+## 2026-01-08 - Story 61
+Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
+- **What was verified:**
+  - CloudFormation stack `duxly-connection` exists with status `UPDATE_COMPLETE`
+  - Stack outputs obtained:
+    - ApiUrl: `https://xehi9a6w6e.execute-api.eu-central-1.amazonaws.com/prod`
+    - FrontendUrl: `https://d3hd7mj8z35qoh.cloudfront.net`
+    - FrontendBucketName: `duxly-connection-frontendbucket-hxcfbg7bswep`
+    - Lambda ARNs for Auth, Callback, Proxy, Stats, GDPR functions
+    - GDPR webhook URLs for customers_data_request, customers_redact, shop_redact
+  - Lambda functions verified:
+    - `duxly-connection-AuthFunction-hbP0byAjYLGe` (python3.12)
+    - `duxly-connection-CallbackFunction-VAbLbFJmSWRZ` (python3.12)
+    - `duxly-connection-ProxyFunction-kQaQRajiciA4` (python3.12)
+    - `duxly-connection-StatsFunction-d7SIoegbePGJ` (nodejs20.x)
+    - `duxly-connection-GdprFunction-I8gHYHmzOyag` (python3.12)
+  - API Gateway endpoints verified: /auth, /callback, /stats, /proxy, /webhooks/gdpr/*
+  - /auth endpoint tested - returns 302 redirect to Shopify OAuth with correct callback URL
+  - CloudFront URL returns 200
+
+- **Files changed:**
+  - `/Users/timmatser/Dev/duxly-connection/Plans/prd.json` - Marked Story 61 as passes: true
+
+- **Learnings for future iterations:**
+  - StatsFunction is nodejs20.x, all others are python3.12
+  - HEAD requests to API Gateway return 403 (MissingAuthenticationTokenException) - use GET
+  - /stats returns 404 for non-existent shops which is expected valid behavior
+
+---
+
 ## 2026-01-08 - Story 60
 Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
 - **What was implemented:**
