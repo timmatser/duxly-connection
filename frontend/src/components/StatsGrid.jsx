@@ -79,6 +79,9 @@ function StatsGrid({ shop, apiUrl }) {
     products: null,
     customers: null,
     orders: null,
+    variants: null,
+    collections: null,
+    inventoryItems: null,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -120,6 +123,9 @@ function StatsGrid({ shop, apiUrl }) {
         products: data.stats?.products ?? null,
         customers: data.stats?.customers ?? null,
         orders: data.stats?.orders ?? null,
+        variants: data.stats?.variants ?? null,
+        collections: data.stats?.collections ?? null,
+        inventoryItems: data.stats?.inventoryItems ?? null,
       });
 
       setFetchedAt(data.stats?.fetchedAt ?? null);
@@ -180,12 +186,30 @@ function StatsGrid({ shop, apiUrl }) {
         </Banner>
       )}
 
-      <InlineGrid columns={{ xs: 1, sm: 3 }} gap="400">
+      <InlineGrid columns={{ xs: 1, sm: 2, md: 3 }} gap="400">
         <StatCard
           label="Products"
           value={stats.products}
           isLoading={isLoading || isRefreshing}
           hasError={stats.products === null && !isLoading && !isRefreshing}
+        />
+        <StatCard
+          label="Variants"
+          value={stats.variants}
+          isLoading={isLoading || isRefreshing}
+          hasError={stats.variants === null && !isLoading && !isRefreshing}
+        />
+        <StatCard
+          label="Collections"
+          value={stats.collections}
+          isLoading={isLoading || isRefreshing}
+          hasError={stats.collections === null && !isLoading && !isRefreshing}
+        />
+        <StatCard
+          label="Inventory Items"
+          value={stats.inventoryItems}
+          isLoading={isLoading || isRefreshing}
+          hasError={stats.inventoryItems === null && !isLoading && !isRefreshing}
         />
         <StatCard
           label="Customers"

@@ -105,6 +105,32 @@ Resources:
             Path: /proxy
             Method: POST
 
+  # Lambda Function - Stats
+  StatsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/functions/
+      Handler: stats.handler
+      Runtime: nodejs20.x
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterStorePrefix}/*'
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+              Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/shopify-stats-cache'
+      Events:
+        StatsEndpoint:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ShopifyApi
+            Path: /stats
+            Method: GET
+
   # Lambda Function - GDPR Compliance Webhooks
   GdprFunction:
     Type: AWS::Serverless::Function

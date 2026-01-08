@@ -129,6 +129,110 @@ async function getCustomerCount(shop, accessToken) {
 }
 
 /**
+ * Fetch collection count (custom + smart collections)
+ */
+async function getCollectionCount(shop, accessToken) {
+  const [customData, smartData] = await Promise.all([
+    callShopifyApi(shop, accessToken, 'custom_collections/count.json'),
+    callShopifyApi(shop, accessToken, 'smart_collections/count.json'),
+  ]);
+  return (customData.count || 0) + (smartData.count || 0);
+}
+
+/**
+ * Fetch variant count using GraphQL (more efficient than REST)
+ */
+async function getVariantCount(shop, accessToken) {
+  const url = `https://${shop}/admin/api/${API_VERSION}/graphql.json`;
+
+  const query = `
+    query {
+      productVariants(first: 1) {
+        edges {
+          node {
+            id
+          }
+        }
+        pageInfo {
+          hasNextPage
+        }
+      }
+      productsCount {
+        count
+      }
+    }
+  `;
+
+  // Use a simpler approach: get product count and estimate variants
+  // Or use the products endpoint with variants included
+  // For now, we'll use a count query via GraphQL
+  const countQuery = `
+    query {
+      productVariantsCount {
+        count
+      }
+    }
+  `;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'X-Shopify-Access-Token': accessToken,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query: countQuery }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`GraphQL error: ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  if (data.errors) {
+    throw new Error(`GraphQL error: ${data.errors[0]?.message}`);
+  }
+
+  return data.data?.productVariantsCount?.count || 0;
+}
+
+/**
+ * Fetch inventory items count using GraphQL
+ */
+async function getInventoryItemCount(shop, accessToken) {
+  const url = `https://${shop}/admin/api/${API_VERSION}/graphql.json`;
+
+  const query = `
+    query {
+      inventoryItemsCount {
+        count
+      }
+    }
+  `;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'X-Shopify-Access-Token': accessToken,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`GraphQL error: ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  if (data.errors) {
+    throw new Error(`GraphQL error: ${data.errors[0]?.message}`);
+  }
+
+  return data.data?.inventoryItemsCount?.count || 0;
+}
+
+/**
  * Get cached stats from DynamoDB
  * @returns {Object|null} Cached stats if valid, null if expired or not found
  */
@@ -150,6 +254,9 @@ async function getCachedStats(shop) {
         products: response.Item.products,
         orders: response.Item.orders,
         customers: response.Item.customers,
+        variants: response.Item.variants,
+        collections: response.Item.collections,
+        inventoryItems: response.Item.inventoryItems,
         fetchedAt: response.Item.fetchedAt,
         cached: true,
       };
@@ -177,6 +284,9 @@ async function cacheStats(shop, stats) {
         products: stats.products,
         orders: stats.orders,
         customers: stats.customers,
+        variants: stats.variants,
+        collections: stats.collections,
+        inventoryItems: stats.inventoryItems,
         fetchedAt: stats.fetchedAt,
         ttl,
         cachedAt: new Date().toISOString(),
@@ -264,7 +374,7 @@ exports.handler = async (event) => {
     }
 
     // Fetch all stats in parallel
-    const [productCount, orderCount, customerCount] = await Promise.all([
+    const [productCount, orderCount, customerCount, variantCount, collectionCount, inventoryItemCount] = await Promise.all([
       getProductCount(shop, accessToken).catch(err => {
         console.error('Failed to fetch product count:', err.message);
         return null;
@@ -277,16 +387,31 @@ exports.handler = async (event) => {
         console.error('Failed to fetch customer count:', err.message);
         return null;
       }),
+      getVariantCount(shop, accessToken).catch(err => {
+        console.error('Failed to fetch variant count:', err.message);
+        return null;
+      }),
+      getCollectionCount(shop, accessToken).catch(err => {
+        console.error('Failed to fetch collection count:', err.message);
+        return null;
+      }),
+      getInventoryItemCount(shop, accessToken).catch(err => {
+        console.error('Failed to fetch inventory item count:', err.message);
+        return null;
+      }),
     ]);
 
     const stats = {
       products: productCount,
       orders: orderCount,
       customers: customerCount,
+      variants: variantCount,
+      collections: collectionCount,
+      inventoryItems: inventoryItemCount,
       fetchedAt: new Date().toISOString(),
     };
 
-    // Check if any stats failed to load
+    // Check if any core stats failed to load
     const hasErrors = productCount === null || orderCount === null || customerCount === null;
 
     // Cache the stats (only if no errors)
