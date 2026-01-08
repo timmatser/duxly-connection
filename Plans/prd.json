@@ -1,0 +1,92 @@
+[
+  {
+    "id": 60,
+    "feature": "Debug Installation 404 Error - Environment Variables",
+    "description": "The root .env file has empty APP_URL and FRONTEND_URL values which breaks the OAuth callback redirect.",
+    "acceptance_criteria": [
+      "Verify deployed Lambda environment variables via AWS Console or CLI",
+      "Update root .env with correct APP_URL (API Gateway URL)",
+      "Update root .env with correct FRONTEND_URL (CloudFront URL)",
+      "Redeploy infrastructure if env vars are missing in Lambda"
+    ],
+    "priority": "critical",
+    "category": "infrastructure",
+    "status": "completed",
+    "passes": true
+  },
+  {
+    "id": 61,
+    "feature": "Debug Installation 404 Error - CloudFormation Stack Verification",
+    "description": "Verify the ShopifyAppStack is deployed and all resources exist.",
+    "acceptance_criteria": [
+      "Confirm ShopifyAppStack exists in CloudFormation",
+      "Get stack outputs (ApiUrl, FrontendUrl, FrontendBucketName)",
+      "Verify all Lambda functions are deployed with correct names",
+      "Verify API Gateway endpoints are accessible"
+    ],
+    "priority": "critical",
+    "category": "infrastructure",
+    "status": "pending",
+    "passes": false
+  },
+  {
+    "id": 62,
+    "feature": "Debug Installation 404 Error - Frontend Deployment",
+    "description": "Verify the React frontend is properly built and deployed to S3/CloudFront.",
+    "acceptance_criteria": [
+      "Check S3 bucket contains built frontend files (index.html, assets/)",
+      "Verify CloudFront distribution is serving the frontend",
+      "Test direct access to CloudFront URL returns valid HTML",
+      "Verify VITE_API_URL in frontend build points to correct API Gateway"
+    ],
+    "priority": "critical",
+    "category": "infrastructure",
+    "status": "pending",
+    "passes": false
+  },
+  {
+    "id": 63,
+    "feature": "Debug Installation 404 Error - OAuth Callback Flow",
+    "description": "Trace the OAuth callback flow to identify where the 404 occurs.",
+    "acceptance_criteria": [
+      "Test /auth endpoint returns 302 redirect to Shopify OAuth",
+      "Test /callback endpoint processes OAuth code correctly",
+      "Verify callback redirects to FRONTEND_URL with shop param",
+      "Check Lambda CloudWatch logs for errors during callback"
+    ],
+    "priority": "critical",
+    "category": "backend",
+    "status": "pending",
+    "passes": false
+  },
+  {
+    "id": 64,
+    "feature": "Debug Installation 404 Error - Shopify App Configuration",
+    "description": "Verify Shopify Partners dashboard has correct URLs configured.",
+    "acceptance_criteria": [
+      "App URL matches CloudFront distribution URL",
+      "Allowed redirect URL matches API Gateway /callback endpoint",
+      "Embedded app setting is enabled",
+      "No trailing slashes in URLs causing mismatches"
+    ],
+    "priority": "critical",
+    "category": "shopify-integration",
+    "status": "pending",
+    "passes": false
+  },
+  {
+    "id": 65,
+    "feature": "Debug Installation 404 Error - React Router Investigation",
+    "description": "The error mentions React Router catching a 404. Investigate if this comes from App Bridge or Shopify Admin.",
+    "acceptance_criteria": [
+      "Determine if 404 is from API call or route mismatch",
+      "Check if App Bridge Provider config is correct (apiKey, host)",
+      "Verify frontend handles missing host/shop params gracefully",
+      "Test app loading directly via CloudFront URL with params"
+    ],
+    "priority": "high",
+    "category": "frontend",
+    "status": "pending",
+    "passes": false
+  }
+]

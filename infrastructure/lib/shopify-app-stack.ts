@@ -17,7 +17,7 @@ export class ShopifyAppStack extends cdk.Stack {
     // Environment variables from context or defaults
     const shopifyApiKey = process.env.SHOPIFY_API_KEY || '';
     const shopifyApiSecret = process.env.SHOPIFY_API_SECRET || '';
-    const appUrl = process.env.APP_URL || '';
+    const parameterStorePrefix = process.env.PARAMETER_STORE_PREFIX || '/shopify/duxly-connection';
 
     // S3 bucket for hosting the frontend
     const frontendBucket = new s3.Bucket(this, 'FrontendBucket', {
@@ -66,8 +66,7 @@ export class ShopifyAppStack extends cdk.Stack {
       environment: {
         SHOPIFY_API_KEY: shopifyApiKey,
         SHOPIFY_API_SECRET: shopifyApiSecret,
-        APP_URL: appUrl,
-        PARAMETER_STORE_PREFIX: '/shopify/clients',
+        PARAMETER_STORE_PREFIX: parameterStorePrefix,
       },
       timeout: cdk.Duration.seconds(30),
     });
@@ -80,9 +79,8 @@ export class ShopifyAppStack extends cdk.Stack {
       environment: {
         SHOPIFY_API_KEY: shopifyApiKey,
         SHOPIFY_API_SECRET: shopifyApiSecret,
-        APP_URL: appUrl,
         FRONTEND_URL: `https://${distribution.distributionDomainName}`,
-        PARAMETER_STORE_PREFIX: '/shopify/clients',
+        PARAMETER_STORE_PREFIX: parameterStorePrefix,
       },
       timeout: cdk.Duration.seconds(30),
     });
@@ -95,7 +93,7 @@ export class ShopifyAppStack extends cdk.Stack {
       environment: {
         SHOPIFY_API_KEY: shopifyApiKey,
         SHOPIFY_API_SECRET: shopifyApiSecret,
-        PARAMETER_STORE_PREFIX: '/shopify/clients',
+        PARAMETER_STORE_PREFIX: parameterStorePrefix,
       },
       timeout: cdk.Duration.seconds(30),
     });
@@ -108,7 +106,7 @@ export class ShopifyAppStack extends cdk.Stack {
       environment: {
         SHOPIFY_API_KEY: shopifyApiKey,
         SHOPIFY_API_SECRET: shopifyApiSecret,
-        PARAMETER_STORE_PREFIX: '/shopify/clients',
+        PARAMETER_STORE_PREFIX: parameterStorePrefix,
         STATS_CACHE_TABLE: statsCacheTable.tableName,
         CACHE_TTL_SECONDS: '3600', // 1 hour cache
       },
@@ -121,7 +119,7 @@ export class ShopifyAppStack extends cdk.Stack {
       handler: 'disconnect.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../../backend/functions')),
       environment: {
-        PARAMETER_STORE_PREFIX: '/shopify/clients',
+        PARAMETER_STORE_PREFIX: parameterStorePrefix,
         STATS_CACHE_TABLE: statsCacheTable.tableName,
       },
       timeout: cdk.Duration.seconds(30),
@@ -143,7 +141,7 @@ export class ShopifyAppStack extends cdk.Stack {
         'ssm:DeleteParameter',
       ],
       resources: [
-        `arn:aws:ssm:${this.region}:${this.account}:parameter/shopify/clients/*`,
+        `arn:aws:ssm:${this.region}:${this.account}:parameter${parameterStorePrefix}/*`,
       ],
     });
 
@@ -178,11 +176,14 @@ export class ShopifyAppStack extends cdk.Stack {
 
     const stats = api.root.addResource('stats');
     stats.addMethod('GET', new apigateway.LambdaIntegration(statsFunction));
-    stats.addMethod('OPTIONS', new apigateway.LambdaIntegration(statsFunction));
 
     const disconnect = api.root.addResource('disconnect');
     disconnect.addMethod('POST', new apigateway.LambdaIntegration(disconnectFunction));
-    disconnect.addMethod('OPTIONS', new apigateway.LambdaIntegration(disconnectFunction));
+
+    // Add APP_URL to Lambda functions after API Gateway is created
+    // This resolves the circular dependency issue - api.url is a CloudFormation token
+    authFunction.addEnvironment('APP_URL', api.url);
+    callbackFunction.addEnvironment('APP_URL', api.url);
 
     // Outputs
     new cdk.CfnOutput(this, 'ApiUrl', {

@@ -1,0 +1,34 @@
+## Codebase Patterns
+- The stack was deployed with SAM (Serverless Application Model), not CDK bootstrap, so CDK deploy commands won't work directly
+- Lambda functions use Python (auth.py, callback.py) not JavaScript despite JS files also being present in the deployment package
+- The Python auth.py computes APP_URL dynamically from requestContext instead of using environment variable
+- FRONTEND_URL is `https://d3hd7mj8z35qoh.cloudfront.net`
+- API Gateway URL is `https://xehi9a6w6e.execute-api.eu-central-1.amazonaws.com/prod`
+- Parameter Store prefix is `/shopify/duxly-connection`
+
+---
+
+## 2026-01-08 - Story 60
+Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
+- **What was implemented:**
+  - Verified Lambda environment variables via AWS CLI
+  - Updated root .env with correct APP_URL and FRONTEND_URL from CloudFormation outputs
+  - Updated Lambda functions with APP_URL via `aws lambda update-function-configuration`
+  - Fixed CDK stack to use dynamic API URL via `authFunction.addEnvironment('APP_URL', api.url)`
+  - Removed duplicate OPTIONS method calls that conflicted with defaultCorsPreflightOptions
+  - Updated CDK to use `parameterStorePrefix` variable consistently
+
+- **Files changed:**
+  - `/Users/timmatser/Dev/duxly-connection/.env` - Added APP_URL and FRONTEND_URL values
+  - `/Users/timmatser/Dev/duxly-connection/infrastructure/lib/shopify-app-stack.ts` - Fixed environment variable handling
+
+- **Learnings for future iterations:**
+  - The deployed stack uses SAM, not CDK bootstrap - so `cdk deploy` fails with bootstrap error
+  - Lambda uses Python runtime despite JS files in repo - check `Runtime` in function config
+  - Python auth.py extracts APP_URL from requestContext, not environment variable
+  - When testing Lambda directly via `aws lambda invoke`, requestContext is empty, so dynamic URL extraction fails
+  - Test OAuth flow via actual API Gateway endpoint, not direct Lambda invocation
+  - CloudFormation stack name is `duxly-connection`, API Gateway ID is `xehi9a6w6e`
+  - Auth endpoint now correctly returns 302 redirect with proper callback URL
+
+---
