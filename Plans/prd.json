@@ -41,8 +41,8 @@
     ],
     "priority": "critical",
     "category": "infrastructure",
-    "status": "pending",
-    "passes": false
+    "status": "completed",
+    "passes": true
   },
   {
     "id": 63,

@@ -8,6 +8,30 @@
 
 ---
 
+## 2026-01-08 - Story 62
+Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
+- **What was verified:**
+  - S3 bucket `duxly-connection-frontendbucket-hxcfbg7bswep` contains:
+    - `index.html` (405 bytes, last modified 2026-01-08 14:11:59)
+    - `assets/index-BeiPL2RV.css` (444108 bytes)
+    - `assets/index-j8T4wgll.js` (638497 bytes)
+    - `assets/index-j8T4wgll.js.map` (1865435 bytes)
+  - CloudFront distribution `d3hd7mj8z35qoh.cloudfront.net` returns HTTP 200
+  - HTML content is valid and references correct asset paths (`/assets/index-*.js`, `/assets/index-*.css`)
+  - JS and CSS assets are accessible via CloudFront (HTTP 200)
+  - VITE_API_URL in built JS is correctly set to `https://xehi9a6w6e.execute-api.eu-central-1.amazonaws.com/prod`
+  - Frontend `.env` file has correct VITE_API_URL and VITE_SHOPIFY_API_KEY
+
+- **Files changed:**
+  - `/Users/timmatser/Dev/duxly-connection/Plans/prd.json` - Marked Story 62 as passes: true
+
+- **Learnings for future iterations:**
+  - Frontend build outputs to `dist/` folder with hashed asset filenames
+  - CloudFront caches content (X-Cache: Hit from cloudfront) - may need invalidation after deploy
+  - Vite embeds environment variables at build time, not runtime
+
+---
+
 ## 2026-01-08 - Story 61
 Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
 - **What was verified:**
