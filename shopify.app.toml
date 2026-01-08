@@ -14,7 +14,7 @@ compliance_topics = ["customers/data_request", "customers/redact", "shop/redact"
 uri = "https://xehi9a6w6e.execute-api.eu-central-1.amazonaws.com/prod/webhooks/gdpr/customers_data_request"
 
 [access_scopes]
-scopes = "read_products,write_products,read_orders"
+scopes = "read_products,write_products,read_orders,write_orders,read_customers,write_customers"
 optional_scopes = []
 use_legacy_install_flow = false
 

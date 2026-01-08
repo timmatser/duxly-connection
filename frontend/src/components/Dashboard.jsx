@@ -23,6 +23,7 @@ import ConnectionIndicator from './ConnectionIndicator';
 import StatsGrid from './StatsGrid';
 import OnboardingTimeline from './OnboardingTimeline';
 import DisconnectModal from './DisconnectModal';
+import SecurityBadge from './SecurityBadge';
 
 function Dashboard({ shop, installed }) {
   // Connection status - could be 'connected', 'syncing', or 'disconnected'
@@ -48,7 +49,7 @@ function Dashboard({ shop, installed }) {
   // Action handlers
   const handleChatWithSupport = () => {
     // Opens support chat or redirects to support page
-    window.open('mailto:support@duxly.com', '_blank');
+    window.open('mailto:support@duxly.nl', '_blank');
   };
 
   const handleReadDocumentation = () => {
@@ -126,6 +127,12 @@ function Dashboard({ shop, installed }) {
         {/* Integration Progress Timeline */}
         <Layout.Section>
           <OnboardingTimeline currentStep="active" />
+        </Layout.Section>
+
+        {/* Security Badge */}
+        <Layout.Section>
+          <Divider />
+          <SecurityBadge />
         </Layout.Section>
 
         {/* Danger Zone - Connection Management */}
