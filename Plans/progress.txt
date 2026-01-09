@@ -89,3 +89,32 @@ The app does NOT use session token authentication for API requests. This is a se
 1. Frontend: Use `getSessionToken()` from App Bridge
 2. Backend: Validate JWT tokens before processing requests
 ---
+
+## 2026-01-09 - Story 107 (Session Token Authentication)
+
+- **What was implemented**: Full session token authentication for all API requests
+- **Backend files created/modified**:
+  - `backend/functions/verifySessionToken.js` (NEW) - JWT verification utility with multi-app support
+    - Loads app credentials from Parameter Store dynamically based on JWT `aud` claim
+    - Verifies HMAC-SHA256 signature with timing-safe comparison
+    - Validates expiration, not-before, and audience claims
+    - Exports: `requireSessionToken`, `getShopFromToken`, `getAppFromToken`
+  - `backend/functions/stats.js` - Added session token requirement, shop/appId now from token
+  - `backend/functions/disconnect.js` - Added session token requirement, removed shop from body
+- **Frontend files created/modified**:
+  - `frontend/src/hooks/useSessionToken.js` (NEW) - React hook for authenticated API calls
+    - Uses App Bridge `getSessionToken()` to obtain fresh tokens
+    - Exports `authenticatedFetch` that adds Authorization header
+  - `frontend/src/components/StatsGrid.jsx` - Uses `authenticatedFetch` instead of `fetch`
+  - `frontend/src/components/DisconnectModal.jsx` - Uses `authenticatedFetch` instead of `fetch`
+- **Acceptance criteria met**:
+  - ✅ App Bridge getSessionToken() used to obtain session tokens
+  - ✅ Session token sent in Authorization header for API requests
+  - ✅ Backend validates session token signature and claims
+  - ✅ No cookie-based authentication for embedded app
+  - ✅ Token refresh handled (getSessionToken() returns fresh token each call)
+- **Learnings for future iterations:**
+  - Session tokens are short-lived (60 seconds), so must get fresh token for each API call
+  - Multi-app architecture requires dynamic credential lookup based on JWT audience claim
+  - Backend stores `event._appId` and `event._shop` after verification for downstream use
+---

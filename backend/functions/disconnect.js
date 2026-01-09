@@ -1,40 +1,25 @@
 /**
  * Disconnect Lambda Function
  * Handles disconnection by deleting credentials from Parameter Store
+ * Supports multiple app registrations via dynamic credential loading
+ *
+ * AUTHENTICATION: Requires valid Shopify session token in Authorization header
  */
 
-const { SSMClient, DeleteParameterCommand, GetParameterCommand } = require('@aws-sdk/client-ssm');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, DeleteCommand } = require('@aws-sdk/lib-dynamodb');
+const { requireSessionToken, getShopFromToken, getAppFromToken } = require('./verifySessionToken');
+const { deleteShopCredentials } = require('./credentials');
 
-const ssmClient = new SSMClient({ region: process.env.AWS_REGION || 'eu-central-1' });
 const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION || 'eu-central-1' });
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
 
 /**
- * Delete a parameter if it exists (don't fail if missing)
- */
-async function deleteParameterIfExists(paramName) {
-  try {
-    // First check if it exists
-    await ssmClient.send(new GetParameterCommand({ Name: paramName, WithDecryption: true }));
-    // If exists, delete it
-    await ssmClient.send(new DeleteParameterCommand({ Name: paramName }));
-    console.log(`Deleted parameter: ${paramName}`);
-    return true;
-  } catch (error) {
-    if (error.name === 'ParameterNotFound') {
-      console.log(`Parameter not found (already deleted): ${paramName}`);
-      return false;
-    }
-    throw error;
-  }
-}
-
-/**
  * Delete cached stats from DynamoDB
+ * @param {string} appId - The app identifier
+ * @param {string} shop - The shop domain
  */
-async function deleteCachedStats(shop) {
+async function deleteCachedStats(appId, shop) {
   const tableName = process.env.STATS_CACHE_TABLE;
   if (!tableName) {
     console.log('No stats cache table configured, skipping cache deletion');
@@ -42,11 +27,13 @@ async function deleteCachedStats(shop) {
   }
 
   try {
+    // Use composite key: {appId}:{shop}
+    const cacheKey = `${appId}:${shop}`;
     await docClient.send(new DeleteCommand({
       TableName: tableName,
-      Key: { shop },
+      Key: { shop: cacheKey },
     }));
-    console.log(`Deleted cached stats for: ${shop}`);
+    console.log(`Deleted cached stats for: ${shop} (app: ${appId})`);
   } catch (error) {
     console.warn(`Failed to delete cached stats: ${error.message}`);
     // Don't fail the disconnect if cache deletion fails
@@ -57,102 +44,86 @@ async function deleteCachedStats(shop) {
  * Main handler
  */
 exports.handler = async (event) => {
+  const corsHeaders = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+  };
+
   // Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      },
+      headers: corsHeaders,
       body: '',
     };
   }
 
   try {
-    // Parse request body
-    const body = JSON.parse(event.body || '{}');
-    const { shop } = body;
+    // Verify session token authentication (now async for multi-app support)
+    const authError = await requireSessionToken(event);
+    if (authError) {
+      return authError;
+    }
+
+    // Get shop and app from verified session token
+    const shop = getShopFromToken(event);
+    const appId = getAppFromToken(event);
 
     if (!shop) {
       return {
         statusCode: 400,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
-        body: JSON.stringify({ error: 'Missing shop parameter' }),
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Could not determine shop from session token' }),
       };
     }
 
-    const prefix = process.env.PARAMETER_STORE_PREFIX || '/shopify/clients';
-    const deletedParams = [];
-    const failedParams = [];
-
-    // List of parameters to delete for this shop
-    const paramNames = [
-      `${prefix}/${shop}/access-token`,
-      `${prefix}/${shop}/scopes`,
-      `${prefix}/${shop}/installed-at`,
-    ];
-
-    // Delete each parameter
-    for (const paramName of paramNames) {
-      try {
-        const deleted = await deleteParameterIfExists(paramName);
-        if (deleted) {
-          deletedParams.push(paramName);
-        }
-      } catch (error) {
-        console.error(`Failed to delete ${paramName}:`, error);
-        failedParams.push(paramName);
-      }
+    if (!appId) {
+      return {
+        statusCode: 400,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Could not determine app from session token' }),
+      };
     }
 
-    // Delete cached stats
-    await deleteCachedStats(shop);
-
-    console.log(`Disconnect completed for shop: ${shop}`);
-    console.log(`Deleted ${deletedParams.length} parameters`);
-
-    if (failedParams.length > 0) {
+    // Delete shop credentials from Parameter Store
+    try {
+      await deleteShopCredentials(appId, shop);
+      console.log(`Deleted credentials for shop: ${shop} (app: ${appId})`);
+    } catch (error) {
+      console.error(`Failed to delete credentials for ${shop} (app: ${appId}):`, error);
       return {
-        statusCode: 207, // Multi-Status - partial success
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
+        statusCode: 500,
+        headers: corsHeaders,
         body: JSON.stringify({
           success: false,
-          message: 'Partial disconnect - some parameters could not be deleted',
-          deleted: deletedParams,
-          failed: failedParams,
+          error: 'Failed to delete credentials',
+          message: error.message,
         }),
       };
     }
 
+    // Delete cached stats
+    await deleteCachedStats(appId, shop);
+
+    console.log(`Disconnect completed for shop: ${shop} (app: ${appId})`);
+
     return {
       statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
+      headers: corsHeaders,
       body: JSON.stringify({
         success: true,
         message: 'Store disconnected successfully',
         shop,
-        deletedParams: deletedParams.length,
+        app: appId,
       }),
     };
   } catch (error) {
     console.error('Disconnect error:', error);
     return {
       statusCode: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
+      headers: corsHeaders,
       body: JSON.stringify({
         error: 'Failed to disconnect store',
         message: error.message,

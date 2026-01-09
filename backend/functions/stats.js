@@ -3,58 +3,22 @@
  * Fetches store statistics (Products, Orders, Customers) from Shopify Admin API
  * Handles rate limiting with retry logic
  * Implements caching via DynamoDB to reduce API calls
+ * Supports multiple app registrations via dynamic credential loading
+ *
+ * AUTHENTICATION: Requires valid Shopify session token in Authorization header
  */
 
-const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
-const crypto = require('crypto');
+const { requireSessionToken, getShopFromToken, getAppFromToken } = require('./verifySessionToken');
+const { getShopAccessToken } = require('./credentials');
 
-const ssmClient = new SSMClient({ region: process.env.AWS_REGION || 'eu-central-1' });
 const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION || 'eu-central-1' });
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
 
 const API_VERSION = '2024-01';
 const CACHE_TABLE = process.env.STATS_CACHE_TABLE || 'shopify-stats-cache';
 const CACHE_TTL_SECONDS = parseInt(process.env.CACHE_TTL_SECONDS || '3600', 10); // Default 1 hour
-
-/**
- * Get access token from Parameter Store
- */
-async function getAccessToken(shop) {
-  const prefix = process.env.PARAMETER_STORE_PREFIX || '/shopify/clients';
-
-  const command = new GetParameterCommand({
-    Name: `${prefix}/${shop}/access-token`,
-    WithDecryption: true,
-  });
-
-  const response = await ssmClient.send(command);
-  return response.Parameter.Value;
-}
-
-/**
- * Verify HMAC signature from Shopify App Bridge request
- */
-function verifySignature(queryParams, signature) {
-  const apiSecret = process.env.SHOPIFY_API_SECRET;
-  if (!apiSecret) return true;
-
-  const params = { ...queryParams };
-  delete params.signature;
-
-  const sortedParams = Object.keys(params)
-    .sort()
-    .map(key => `${key}=${params[key]}`)
-    .join('');
-
-  const hash = crypto
-    .createHmac('sha256', apiSecret)
-    .update(sortedParams)
-    .digest('hex');
-
-  return hash === signature;
-}
 
 /**
  * Sleep utility for retry delays
@@ -210,13 +174,17 @@ async function getInventoryItemCount(shop, accessToken) {
 
 /**
  * Get cached stats from DynamoDB
+ * @param {string} appId - The app identifier
+ * @param {string} shop - The shop domain
  * @returns {Object|null} Cached stats if valid, null if expired or not found
  */
-async function getCachedStats(shop) {
+async function getCachedStats(appId, shop) {
   try {
+    // Use composite key: {appId}:{shop}
+    const cacheKey = `${appId}:${shop}`;
     const response = await docClient.send(new GetCommand({
       TableName: CACHE_TABLE,
-      Key: { shop },
+      Key: { shop: cacheKey },
     }));
 
     if (!response.Item) {
@@ -247,16 +215,23 @@ async function getCachedStats(shop) {
 
 /**
  * Store stats in DynamoDB cache
+ * @param {string} appId - The app identifier
+ * @param {string} shop - The shop domain
+ * @param {Object} stats - The stats to cache
  */
-async function cacheStats(shop, stats) {
+async function cacheStats(appId, shop, stats) {
   try {
     const now = Math.floor(Date.now() / 1000);
     const ttl = now + CACHE_TTL_SECONDS;
 
+    // Use composite key: {appId}:{shop}
+    const cacheKey = `${appId}:${shop}`;
     await docClient.send(new PutCommand({
       TableName: CACHE_TABLE,
       Item: {
-        shop,
+        shop: cacheKey,
+        appId,
+        shopDomain: shop,
         products: stats.products,
         orders: stats.orders,
         customers: stats.customers,
@@ -295,32 +270,41 @@ exports.handler = async (event) => {
   }
 
   try {
-    const params = event.queryStringParameters || {};
-    const { shop, signature, refresh } = params;
-    const forceRefresh = refresh === 'true' || refresh === '1';
+    // Verify session token authentication (now async for multi-app support)
+    const authError = await requireSessionToken(event);
+    if (authError) {
+      return authError;
+    }
+
+    // Get shop and app from verified session token
+    const shop = getShopFromToken(event);
+    const appId = getAppFromToken(event);
 
     if (!shop) {
       return {
         statusCode: 400,
         headers: corsHeaders,
-        body: JSON.stringify({ error: 'Missing required parameter: shop' }),
+        body: JSON.stringify({ error: 'Could not determine shop from session token' }),
       };
     }
 
-    // Verify signature if provided
-    if (signature && !verifySignature(params, signature)) {
+    if (!appId) {
       return {
-        statusCode: 403,
+        statusCode: 400,
         headers: corsHeaders,
-        body: JSON.stringify({ error: 'Invalid signature' }),
+        body: JSON.stringify({ error: 'Could not determine app from session token' }),
       };
     }
+
+    const params = event.queryStringParameters || {};
+    const { refresh } = params;
+    const forceRefresh = refresh === 'true' || refresh === '1';
 
     // Check cache first (unless force refresh is requested)
     if (!forceRefresh) {
-      const cachedStats = await getCachedStats(shop);
+      const cachedStats = await getCachedStats(appId, shop);
       if (cachedStats) {
-        console.log(`Returning cached stats for ${shop}`);
+        console.log(`Returning cached stats for ${shop} (app: ${appId})`);
         return {
           statusCode: 200,
           headers: corsHeaders,
@@ -336,9 +320,9 @@ exports.handler = async (event) => {
     // Get access token from Parameter Store
     let accessToken;
     try {
-      accessToken = await getAccessToken(shop);
+      accessToken = await getShopAccessToken(appId, shop);
     } catch (error) {
-      console.error('Failed to get access token:', error.message);
+      console.error(`Failed to get access token for ${shop} (app: ${appId}):`, error.message);
       return {
         statusCode: 404,
         headers: corsHeaders,
@@ -392,7 +376,7 @@ exports.handler = async (event) => {
 
     // Cache the stats (only if no errors)
     if (!hasErrors) {
-      await cacheStats(shop, stats);
+      await cacheStats(appId, shop, stats);
     }
 
     return {

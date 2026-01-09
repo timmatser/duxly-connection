@@ -10,6 +10,7 @@ import {
   Button,
 } from '@shopify/polaris';
 import { RefreshIcon } from '@shopify/polaris-icons';
+import { useSessionToken } from '../hooks/useSessionToken';
 
 /**
  * Individual stat card component
@@ -71,8 +72,11 @@ function formatLastUpdated(isoString) {
 /**
  * Stats Grid component
  * Displays store statistics in a 3-column grid
+ * Uses session token authentication for secure API access
  */
 function StatsGrid({ shop, apiUrl }) {
+  const { authenticatedFetch } = useSessionToken();
+
   const [stats, setStats] = useState({
     products: null,
     customers: null,
@@ -96,19 +100,21 @@ function StatsGrid({ shop, apiUrl }) {
     setError(null);
 
     try {
-      // Construct API URL - use provided apiUrl or default
+      // Construct API URL - shop is determined from session token on backend
       const baseUrl = apiUrl || import.meta.env.VITE_API_URL || '';
-      let url = `${baseUrl}/stats?shop=${encodeURIComponent(shop)}`;
+      let url = `${baseUrl}/stats`;
 
       // Add refresh parameter to force cache invalidation
       if (forceRefresh) {
-        url += '&refresh=true';
+        url += '?refresh=true';
       }
 
-      const response = await fetch(url);
+      // Use authenticated fetch with session token
+      const response = await authenticatedFetch(url);
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch stats: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to fetch stats: ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -139,7 +145,7 @@ function StatsGrid({ shop, apiUrl }) {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [shop, apiUrl]);
+  }, [apiUrl, authenticatedFetch]);
 
   useEffect(() => {
     if (shop) {

@@ -6,8 +6,11 @@ import {
   Banner,
   TextField,
 } from '@shopify/polaris';
+import { useSessionToken } from '../hooks/useSessionToken';
 
 function DisconnectModal({ shop, open, onClose, onDisconnect }) {
+  const { authenticatedFetch } = useSessionToken();
+
   const [confirmText, setConfirmText] = useState('');
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [error, setError] = useState(null);
@@ -23,12 +26,9 @@ function DisconnectModal({ shop, open, onClose, onDisconnect }) {
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || '';
-      const response = await fetch(`${apiUrl}/disconnect`, {
+      // Use authenticated fetch - shop is determined from session token on backend
+      const response = await authenticatedFetch(`${apiUrl}/disconnect`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ shop }),
       });
 
       const data = await response.json();

@@ -122,8 +122,8 @@
     ],
     "priority": "critical",
     "category": "functionality",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true
   },
   {
     "id": 108,
