@@ -233,8 +233,9 @@
     ],
     "priority": "medium",
     "category": "functionality",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true,
+    "note": "N/A - App fetches stats on-demand via API, does not perform traditional data synchronization between systems"
   },
   {
     "id": 115,
@@ -338,8 +339,9 @@
     ],
     "priority": "medium",
     "category": "listing",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true,
+    "note": "N/A - App does not require Online Store sales channel, works with any Shopify store"
   },
   {
     "id": 126,
@@ -369,8 +371,9 @@
     ],
     "priority": "high",
     "category": "listing",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true,
+    "note": "App is English-only, no additional language claims made"
   },
   {
     "id": 128,
@@ -430,8 +433,9 @@
     ],
     "priority": "high",
     "category": "listing",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true,
+    "note": "App listing does not include reviews or testimonials"
   },
   {
     "id": 132,
@@ -445,8 +449,9 @@
     ],
     "priority": "high",
     "category": "listing",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true,
+    "note": "App listing does not include unverifiable statistics or data claims"
   },
   {
     "id": 133,
