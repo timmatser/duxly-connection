@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duxly Connection - Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1000.0.min.js"></script>
+    <link rel="icon" href="https://cdn.prod.website-files.com/677026afd327b7c71e592c29/677026afd327b7c71e592c66_favicon.png" type="image/png">
+    <style>
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .architecture-box {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 2px solid #e2e8f0;
+        }
+        .connector-line {
+            stroke: #94a3b8;
+            stroke-width: 2;
+            stroke-dasharray: 5,5;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Login View -->
+    <div id="login-view" class="min-h-screen flex items-center justify-center px-4">
+        <div class="max-w-md w-full">
+            <div class="text-center mb-8">
+                <img src="https://cdn.prod.website-files.com/677026afd327b7c71e592c29/67702f9307a843686ff4dce0_duxly%20Wordmark%20Width1920px%20Zwart.svg" alt="Duxly" class="h-12 mx-auto mb-4">
+                <h1 class="text-2xl font-bold text-gray-900">Duxly Connection</h1>
+                <p class="text-gray-600 mt-2">Sign in to manage Shopify app connections</p>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-8">
+                <div id="login-error" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm"></div>
+
+                <form id="login-form" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input type="email" id="login-email" required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            placeholder="you@duxly.nl">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                        <input type="password" id="login-password" required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            placeholder="Enter your password">
+                    </div>
+
+                    <div id="new-password-section" class="hidden space-y-4">
+                        <div class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg text-sm">
+                            Please set a new password to continue.
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                            <input type="password" id="login-new-password"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+                            <input type="password" id="login-confirm-password"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                        </div>
+                    </div>
+
+                    <button type="submit" id="login-btn"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition">
+                        Sign In
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard View -->
+    <div id="dashboard-view" class="hidden">
+        <!-- Header -->
+        <header class="bg-white shadow">
+            <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <img src="https://cdn.prod.website-files.com/677026afd327b7c71e592c29/67702f9307a843686ff4dce0_duxly%20Wordmark%20Width1920px%20Zwart.svg" alt="Duxly" class="h-8">
+                        <span class="text-gray-300">|</span>
+                        <span class="text-lg font-semibold text-gray-900">Connection Admin</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span id="user-email" class="text-sm text-gray-600"></span>
+                        <button onclick="logout()" class="text-sm text-red-600 hover:text-red-700 font-medium">
+                            Sign Out
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+            <!-- Architecture Overview -->
+            <div class="bg-white rounded-xl shadow p-6 fade-in">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Architecture Overview</h2>
+                <p class="text-gray-600 mb-6">Duxly Connection uses a multi-app distribution model: one codebase powering multiple Shopify apps for different clients.</p>
+
+                <!-- Architecture Diagram -->
+                <div class="overflow-x-auto">
+                    <div class="min-w-[700px] p-4">
+                        <!-- Codebase Box -->
+                        <div class="architecture-box rounded-xl p-4 mb-6 text-center">
+                            <div class="text-sm text-gray-500 mb-1">Shared Codebase</div>
+                            <div class="font-mono text-sm text-gray-700 bg-white rounded px-3 py-1 inline-block">/duxly-connection</div>
+                            <div class="flex justify-center gap-2 mt-3 flex-wrap">
+                                <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">Lambda Functions</span>
+                                <span class="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded">React Frontend</span>
+                                <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded">CDK Infrastructure</span>
+                            </div>
+                        </div>
+
+                        <!-- Connector Lines SVG -->
+                        <div class="flex justify-center mb-4">
+                            <svg width="400" height="40" class="text-gray-400">
+                                <line x1="100" y1="0" x2="100" y2="40" class="connector-line"/>
+                                <line x1="200" y1="0" x2="200" y2="40" class="connector-line"/>
+                                <line x1="300" y1="0" x2="300" y2="40" class="connector-line"/>
+                            </svg>
+                        </div>
+
+                        <!-- App Cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <!-- Public App -->
+                            <div class="border-2 border-blue-200 bg-blue-50 rounded-xl p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">Public</span>
+                                    <span class="inline-flex items-center text-xs">
+                                        <span class="w-2 h-2 bg-yellow-500 rounded-full mr-1 animate-pulse"></span>
+                                        In Review
+                                    </span>
+                                </div>
+                                <h3 class="font-semibold text-gray-900 mb-1">Duxly Connection</h3>
+                                <p class="text-xs text-gray-500 mb-3">Main public app for App Store</p>
+                                <div class="space-y-1 text-xs">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-500">Stack:</span>
+                                        <span class="font-mono text-gray-700">duxly-connection</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-500">Distribution:</span>
+                                        <span class="text-blue-600">Shopify App Store</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Custom App 1 -->
+                            <div class="border-2 border-gray-200 bg-gray-50 rounded-xl p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="bg-gray-600 text-white text-xs px-2 py-1 rounded-full">Custom</span>
+                                    <span class="inline-flex items-center text-xs text-gray-400">
+                                        <span class="w-2 h-2 bg-gray-300 rounded-full mr-1"></span>
+                                        Not Created
+                                    </span>
+                                </div>
+                                <h3 class="font-semibold text-gray-900 mb-1">Client App 1</h3>
+                                <p class="text-xs text-gray-500 mb-3">Custom distribution for specific client</p>
+                                <div class="space-y-1 text-xs">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-500">Stack:</span>
+                                        <span class="font-mono text-gray-400">duxly-connection-1</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-500">Distribution:</span>
+                                        <span class="text-gray-600">Direct Install Link</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Custom App 2 -->
+                            <div class="border-2 border-dashed border-gray-300 bg-white rounded-xl p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="bg-gray-400 text-white text-xs px-2 py-1 rounded-full">Future</span>
+                                </div>
+                                <h3 class="font-semibold text-gray-400 mb-1">Client App N</h3>
+                                <p class="text-xs text-gray-400 mb-3">Additional custom apps as needed</p>
+                                <div class="text-center py-2">
+                                    <span class="text-gray-400 text-xs">+ Add via Shopify Partners</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- How It Works -->
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                    <h3 class="font-medium text-gray-900 mb-3">How It Works</h3>
+                    <div class="grid md:grid-cols-2 gap-4 text-sm text-gray-600">
+                        <div class="flex items-start">
+                            <span class="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3 flex-shrink-0">1</span>
+                            <div>
+                                <strong class="text-gray-900">Public App</strong> - Listed on Shopify App Store, available to all merchants. Currently under review.
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3 flex-shrink-0">2</span>
+                            <div>
+                                <strong class="text-gray-900">Custom Apps</strong> - Created per-client in Shopify Partners. Distributed via direct install link.
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3 flex-shrink-0">3</span>
+                            <div>
+                                <strong class="text-gray-900">Separate Stacks</strong> - Each app gets its own AWS infrastructure (API Gateway, Lambda, CloudFront).
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3 flex-shrink-0">4</span>
+                            <div>
+                                <strong class="text-gray-900">Shared Storage</strong> - All app credentials stored in AWS Parameter Store under <code class="bg-gray-100 px-1 rounded">/shopify/duxly-connection/</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Registered Apps -->
+            <div class="bg-white rounded-xl shadow p-6 fade-in">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Registered Apps</h2>
+                    <button onclick="showAddAppModal()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Add App
+                    </button>
+                </div>
+
+                <div id="apps-error" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm"></div>
+
+                <div id="apps-loading" class="text-center py-8 text-gray-500">
+                    <svg class="animate-spin h-8 w-8 text-blue-600 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Loading registered apps...
+                </div>
+
+                <div id="apps-list" class="hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="apps-grid">
+                        <!-- Apps will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Connected Shops -->
+            <div class="bg-white rounded-xl shadow p-6 fade-in">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Connected Shops</h2>
+                    <button onclick="loadConnectedShops()" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                        Refresh
+                    </button>
+                </div>
+
+                <div id="shops-error" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm"></div>
+
+                <div id="shops-loading" class="text-center py-8 text-gray-500">
+                    <svg class="animate-spin h-8 w-8 text-blue-600 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Loading connected shops...
+                </div>
+
+                <div id="shops-empty" class="hidden text-center py-8">
+                    <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                    </svg>
+                    <p class="text-gray-500">No shops connected yet</p>
+                    <p class="text-sm text-gray-400 mt-1">Shops will appear here after installation</p>
+                </div>
+
+                <div id="shops-list" class="hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead>
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shop</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scopes</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="shops-tbody" class="divide-y divide-gray-200">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="bg-white rounded-xl shadow p-6 fade-in">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+                <div class="grid md:grid-cols-3 gap-4">
+                    <a href="https://partners.shopify.com" target="_blank" rel="noopener"
+                        class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-900">Shopify Partners</h3>
+                            <p class="text-sm text-gray-500">Manage apps & credentials</p>
+                        </div>
+                        <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                        </svg>
+                    </a>
+                    <a href="https://eu-central-1.console.aws.amazon.com/systems-manager/parameters?region=eu-central-1" target="_blank" rel="noopener"
+                        class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-900">AWS Parameter Store</h3>
+                            <p class="text-sm text-gray-500">View stored credentials</p>
+                        </div>
+                        <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                        </svg>
+                    </a>
+                    <a href="https://eu-central-1.console.aws.amazon.com/cloudwatch/home?region=eu-central-1#logsV2:log-groups" target="_blank" rel="noopener"
+                        class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-900">CloudWatch Logs</h3>
+                            <p class="text-sm text-gray-500">View Lambda logs</p>
+                        </div>
+                        <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 text-center text-sm text-gray-500">
+            Duxly Connection Admin &bull; Uses shared <a href="https://auth.duxly.eu" class="text-blue-600 hover:text-blue-800">Duxly Auth</a> for authentication
+        </footer>
+    </div>
+
+    <!-- Add App Modal -->
+    <div id="add-app-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-900">Register Shopify App</h3>
+                    <button onclick="hideAddAppModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <form id="add-app-form" class="p-6 space-y-4">
+                <div id="add-app-error" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm"></div>
+
+                <!-- Shopify Partners Link -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Shopify Partners Link</label>
+                    <input type="url" id="app-partners-link"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                        placeholder="https://dev.shopify.com/dashboard/123/apps/456"
+                        onpaste="handlePartnersLinkPaste(event)">
+                    <p class="text-xs text-gray-500 mt-1">Paste the app URL from Shopify Partners Dashboard</p>
+                </div>
+
+                <div class="border-t border-gray-200 pt-4">
+                    <p class="text-sm text-gray-600 mb-4">Fill in the app details from Shopify Partners:</p>
+                </div>
+
+                <!-- App Name -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">App Name <span class="text-red-500">*</span></label>
+                    <input type="text" id="app-name" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                        placeholder="e.g., Duxly Connection - Hart Beach">
+                </div>
+
+                <!-- Distribution Type -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Distribution Type <span class="text-red-500">*</span></label>
+                    <select id="app-distribution" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                        <option value="custom">Custom Distribution</option>
+                        <option value="public">Public (App Store)</option>
+                    </select>
+                </div>
+
+                <!-- Client ID -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Client ID (API Key) <span class="text-red-500">*</span></label>
+                    <input type="text" id="app-client-id" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition font-mono text-sm"
+                        placeholder="e.g., 79f672bb13bc6ab7fa86755927ff9a6f">
+                </div>
+
+                <!-- Client Secret -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Client Secret <span class="text-red-500">*</span></label>
+                    <input type="password" id="app-client-secret" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition font-mono text-sm"
+                        placeholder="e.g., shpss_xxxxxxxxxxxxx">
+                    <p class="text-xs text-gray-500 mt-1">Stored securely in AWS Parameter Store</p>
+                </div>
+
+                <!-- Status -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <select id="app-status"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                        <option value="pending">Pending Setup</option>
+                        <option value="active">Active</option>
+                        <option value="review">Under Review</option>
+                    </select>
+                </div>
+
+                <!-- Notes -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Notes (optional)</label>
+                    <textarea id="app-notes" rows="2"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                        placeholder="e.g., Client: Hart Beach, Contact: john@hartbeach.com"></textarea>
+                </div>
+
+                <div class="pt-4 flex justify-end gap-3">
+                    <button type="button" onclick="hideAddAppModal()" class="px-4 py-2 text-gray-700 hover:text-gray-900 font-medium">
+                        Cancel
+                    </button>
+                    <button type="submit" id="add-app-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg transition">
+                        Register App
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- App Details Modal -->
+    <div id="app-details-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 id="app-details-title" class="text-lg font-semibold text-gray-900">App Details</h3>
+                    <button onclick="hideAppDetailsModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div id="app-details-content" class="p-6">
+                <!-- Content will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Setup Instructions Modal -->
+    <div id="setup-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-green-100 rounded-lg p-2">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900">Setup Instructions</h3>
+                    </div>
+                    <button onclick="hideSetupModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div id="setup-modal-content" class="p-6">
+                <!-- Content will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

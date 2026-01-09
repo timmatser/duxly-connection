@@ -1,4 +1,4 @@
-import { BlockStack, InlineStack, Text, Box } from '@shopify/polaris';
+import { BlockStack, Text, Box } from '@shopify/polaris';
 
 /**
  * Checkmark icon for completed steps
@@ -27,21 +27,13 @@ function CheckmarkIcon({ size = 20 }) {
  * Step indicator circle
  */
 function StepIndicator({ stepNumber, status }) {
-  const isCompleted = status === 'completed';
-  const isActive = status === 'active';
-  const isPending = status === 'pending';
+  const statusStyles = {
+    completed: { backgroundColor: '#22C55E', borderColor: '#22C55E', boxShadow: 'none' },
+    active: { backgroundColor: '#4F46E5', borderColor: '#4F46E5', boxShadow: '0 0 0 4px rgba(79, 70, 229, 0.2)' },
+    pending: { backgroundColor: '#E5E7EB', borderColor: '#D1D5DB', boxShadow: 'none' },
+  };
 
-  const backgroundColor = isCompleted
-    ? '#22C55E'
-    : isActive
-      ? '#4F46E5'
-      : '#E5E7EB';
-
-  const borderColor = isCompleted
-    ? '#22C55E'
-    : isActive
-      ? '#4F46E5'
-      : '#D1D5DB';
+  const { backgroundColor, borderColor, boxShadow } = statusStyles[status] || statusStyles.pending;
 
   return (
     <div
@@ -56,15 +48,15 @@ function StepIndicator({ stepNumber, status }) {
         justifyContent: 'center',
         flexShrink: 0,
         transition: 'all 0.3s ease',
-        boxShadow: isActive ? '0 0 0 4px rgba(79, 70, 229, 0.2)' : 'none',
+        boxShadow,
       }}
     >
-      {isCompleted ? (
+      {status === 'completed' ? (
         <CheckmarkIcon size={18} />
       ) : (
         <span
           style={{
-            color: isPending ? '#9CA3AF' : 'white',
+            color: status === 'pending' ? '#9CA3AF' : 'white',
             fontWeight: 600,
             fontSize: 14,
           }}
@@ -97,15 +89,15 @@ function StepConnector({ isCompleted }) {
 /**
  * Individual step component
  */
-function TimelineStep({ step, isLast }) {
+function TimelineStep({ step }) {
   const { title, description, status } = step;
 
-  const titleColor =
-    status === 'completed'
-      ? '#22C55E'
-      : status === 'active'
-        ? '#4F46E5'
-        : '#6B7280';
+  const titleColors = {
+    completed: '#22C55E',
+    active: '#4F46E5',
+    pending: '#6B7280',
+  };
+  const titleColor = titleColors[status] || titleColors.pending;
 
   return (
     <div
@@ -221,12 +213,8 @@ function OnboardingTimeline({ currentStep = 'active' }) {
             justifyContent: 'space-between',
           }}
         >
-          {stepsWithStatus.map((step, index) => (
-            <TimelineStep
-              key={step.id}
-              step={step}
-              isLast={index === stepsWithStatus.length - 1}
-            />
+          {stepsWithStatus.map((step) => (
+            <TimelineStep key={step.id} step={step} />
           ))}
         </div>
       </BlockStack>

@@ -14,7 +14,6 @@ const ssmClient = new SSMClient({ region: process.env.AWS_REGION || 'eu-central-
 async function exchangeCodeForToken(shop, code) {
   const apiKey = process.env.SHOPIFY_API_KEY;
   const apiSecret = process.env.SHOPIFY_API_SECRET;
-  const appUrl = process.env.APP_URL;
 
   const response = await fetch(`https://${shop}/admin/oauth/access_token`, {
     method: 'POST',
@@ -48,10 +47,6 @@ async function storeCredentials(shop, accessToken, scopes) {
     Type: 'SecureString',
     Description: `Shopify access token for ${shop}`,
     Overwrite: true,
-    Tags: [
-      { Key: 'App', Value: 'Shopify' },
-      { Key: 'Shop', Value: shop },
-    ],
   });
 
   await ssmClient.send(tokenParam);
@@ -63,10 +58,6 @@ async function storeCredentials(shop, accessToken, scopes) {
     Type: 'String',
     Description: `Shopify scopes for ${shop}`,
     Overwrite: true,
-    Tags: [
-      { Key: 'App', Value: 'Shopify' },
-      { Key: 'Shop', Value: shop },
-    ],
   });
 
   await ssmClient.send(scopesParam);
@@ -78,10 +69,6 @@ async function storeCredentials(shop, accessToken, scopes) {
     Type: 'String',
     Description: `Installation timestamp for ${shop}`,
     Overwrite: true,
-    Tags: [
-      { Key: 'App', Value: 'Shopify' },
-      { Key: 'Shop', Value: shop },
-    ],
   });
 
   await ssmClient.send(timestampParam);

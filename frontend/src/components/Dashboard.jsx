@@ -8,7 +8,6 @@ import {
   BlockStack,
   InlineStack,
   Button,
-  Icon,
   Box,
   Divider,
 } from '@shopify/polaris';

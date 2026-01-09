@@ -29,7 +29,7 @@ exports.handler = async (event) => {
     const appUrl = process.env.APP_URL;
 
     // Required OAuth scopes for your app
-    const scopes = 'read_products,write_products,read_orders';
+    const scopes = 'read_products,write_products,read_orders,write_orders';
 
     // Generate a random state parameter for security
     const state = crypto.randomBytes(16).toString('hex');

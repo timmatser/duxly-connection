@@ -730,5 +730,126 @@
     "category": "compliance",
     "status": "pending",
     "passes": false
+  },
+  {
+    "id": 200,
+    "feature": "Create SSL Certificate for connections.duxly.eu",
+    "description": "Request and validate an ACM certificate for the custom domain connections.duxly.eu.",
+    "acceptance_criteria": [
+      "Request ACM certificate in us-east-1 region (required for CloudFront)",
+      "Add DNS validation records to duxly.eu DNS",
+      "Certificate status shows 'Issued'",
+      "Certificate covers connections.duxly.eu domain"
+    ],
+    "priority": "critical",
+    "category": "deployment",
+    "status": "pending",
+    "passes": false
+  },
+  {
+    "id": 201,
+    "feature": "Configure CloudFront Custom Domain",
+    "description": "Update CloudFront distribution to use connections.duxly.eu as an alternate domain name (CNAME).",
+    "acceptance_criteria": [
+      "Add connections.duxly.eu as alternate domain name in CloudFront",
+      "Associate ACM certificate with CloudFront distribution",
+      "CloudFront distribution successfully deploys with custom domain",
+      "HTTPS works correctly on custom domain"
+    ],
+    "priority": "critical",
+    "category": "deployment",
+    "status": "pending",
+    "passes": false
+  },
+  {
+    "id": 202,
+    "feature": "Configure DNS for connections.duxly.eu",
+    "description": "Create DNS records pointing connections.duxly.eu to the CloudFront distribution.",
+    "acceptance_criteria": [
+      "Create CNAME or ALIAS record for connections.duxly.eu",
+      "Record points to CloudFront distribution domain name",
+      "DNS propagation complete (verify with dig/nslookup)",
+      "connections.duxly.eu resolves correctly"
+    ],
+    "priority": "critical",
+    "category": "deployment",
+    "status": "pending",
+    "passes": false
+  },
+  {
+    "id": 203,
+    "feature": "Update Frontend Environment for Custom Domain",
+    "description": "Update frontend configuration to use the new custom domain URL.",
+    "acceptance_criteria": [
+      "Update VITE_API_URL if needed",
+      "Update any hardcoded URLs to use connections.duxly.eu",
+      "Rebuild frontend with updated configuration",
+      "Deploy updated frontend to S3 bucket"
+    ],
+    "priority": "high",
+    "category": "deployment",
+    "status": "pending",
+    "passes": false
+  },
+  {
+    "id": 204,
+    "feature": "Update Shopify App URLs",
+    "description": "Update Shopify Partners dashboard with the new custom domain URLs.",
+    "acceptance_criteria": [
+      "Update App URL to https://connections.duxly.eu",
+      "Update allowed redirect URLs if needed",
+      "Verify shopify.app.toml reflects correct URLs",
+      "Test app loads correctly from Shopify Admin"
+    ],
+    "priority": "critical",
+    "category": "deployment",
+    "status": "pending",
+    "passes": false
+  },
+  {
+    "id": 205,
+    "feature": "Update CDK Stack for Custom Domain",
+    "description": "Modify CDK infrastructure to include custom domain configuration for CloudFront.",
+    "acceptance_criteria": [
+      "Add ACM certificate reference to CDK stack",
+      "Configure CloudFront distribution with alternate domain names",
+      "CDK synth generates correct CloudFormation template",
+      "CDK deploy successfully applies custom domain configuration"
+    ],
+    "priority": "high",
+    "category": "deployment",
+    "status": "pending",
+    "passes": false
+  },
+  {
+    "id": 206,
+    "feature": "Verify Custom Domain Deployment",
+    "description": "End-to-end verification that the app works correctly on connections.duxly.eu.",
+    "acceptance_criteria": [
+      "Frontend loads at https://connections.duxly.eu",
+      "OAuth flow works with new domain",
+      "API calls succeed from the app",
+      "App embeds correctly in Shopify Admin",
+      "No mixed content or SSL warnings"
+    ],
+    "priority": "critical",
+    "category": "deployment",
+    "status": "pending",
+    "passes": false
+  },
+  {
+    "id": 207,
+    "feature": "Invalidate CloudFront Cache After Deployment",
+    "description": "Create CloudFront cache invalidation to ensure new content is served.",
+    "acceptance_criteria": [
+      "Create invalidation for /* path",
+      "Invalidation completes successfully",
+      "New content served immediately after deployment",
+      "Add invalidation step to deployment script"
+    ],
+    "priority": "medium",
+    "category": "deployment",
+    "status": "pending",
+    "passes": false
   }
 ]

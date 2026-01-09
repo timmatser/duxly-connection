@@ -1,6 +1,4 @@
-import { useState, useEffect } from 'react';
 import { BlockStack, InlineStack, Text, Badge, Box } from '@shopify/polaris';
-import DuxlyLogo from './DuxlyLogo';
 import { parseStoreName } from '../utils/parseStoreName';
 
 /**

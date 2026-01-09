@@ -6,8 +6,6 @@ import {
   InlineStack,
   InlineGrid,
   SkeletonDisplayText,
-  SkeletonBodyText,
-  Box,
   Banner,
   Button,
 } from '@shopify/polaris';

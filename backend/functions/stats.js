@@ -38,19 +38,16 @@ async function getAccessToken(shop) {
  */
 function verifySignature(queryParams, signature) {
   const apiSecret = process.env.SHOPIFY_API_SECRET;
-  if (!apiSecret) return true; // Skip verification if no secret configured
+  if (!apiSecret) return true;
 
-  // Remove signature from params
   const params = { ...queryParams };
   delete params.signature;
 
-  // Sort and build query string
   const sortedParams = Object.keys(params)
     .sort()
     .map(key => `${key}=${params[key]}`)
     .join('');
 
-  // Generate signature
   const hash = crypto
     .createHmac('sha256', apiSecret)
     .update(sortedParams)
@@ -140,33 +137,12 @@ async function getCollectionCount(shop, accessToken) {
 }
 
 /**
- * Fetch variant count using GraphQL (more efficient than REST)
+ * Fetch variant count using GraphQL
  */
 async function getVariantCount(shop, accessToken) {
   const url = `https://${shop}/admin/api/${API_VERSION}/graphql.json`;
 
   const query = `
-    query {
-      productVariants(first: 1) {
-        edges {
-          node {
-            id
-          }
-        }
-        pageInfo {
-          hasNextPage
-        }
-      }
-      productsCount {
-        count
-      }
-    }
-  `;
-
-  // Use a simpler approach: get product count and estimate variants
-  // Or use the products endpoint with variants included
-  // For now, we'll use a count query via GraphQL
-  const countQuery = `
     query {
       productVariantsCount {
         count
@@ -180,7 +156,7 @@ async function getVariantCount(shop, accessToken) {
       'X-Shopify-Access-Token': accessToken,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ query: countQuery }),
+    body: JSON.stringify({ query }),
   });
 
   if (!response.ok) {
