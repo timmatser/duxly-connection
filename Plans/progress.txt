@@ -228,3 +228,36 @@ Thread: N/A (current session)
 - Inventory items would require adding `read_inventory` scope (requires app reinstall)
 
 ---
+
+## 2026-01-09 - Story 113 (Must Re-install Properly)
+Thread: N/A (current session)
+
+### What was verified
+- OAuth flow handles reinstallation correctly
+- Credentials are overwritten (not blocked) when reinstalling
+- Callback redirects to frontend → Shopify admin flow works
+
+### Files reviewed
+- `backend/functions/credentials.js` - `storeShopCredentials` uses `Overwrite: true`
+- `backend/functions/callback.js` - Redirects with `?installed=true`
+- `frontend/src/App.jsx` - Handles `installed=true` and redirects to Shopify admin
+
+### Reinstall Flow Verified
+1. Merchant reinstalls app → OAuth flow initiates
+2. Shopify OAuth redirects to /callback with code
+3. `callback.js` exchanges code for token
+4. `storeShopCredentials` creates/overwrites all credentials with `Overwrite: true`
+5. Redirects to frontend with `?shop=X&app=Y&installed=true`
+6. `App.jsx` detects `installed=true` and redirects to Shopify admin embedded context
+
+### Key Implementation Details
+- `Overwrite: true` on PutParameterCommand ensures reinstall works even if old credentials exist
+- No blocking check for existing credentials - always overwrite on reinstall
+- Build verified: Vite build succeeds with no errors
+
+### Learnings for future iterations
+- Shopify reinstall works because OAuth always overwrites credentials
+- Don't check for existing credentials before storing - just overwrite
+- The GDPR `shop/redact` webhook cleanup happens 48 hours after uninstall, but reinstall works before that
+
+---

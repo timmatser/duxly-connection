@@ -74,9 +74,22 @@
     "id": 113,
     "feature": "Must Re-install Properly",
     "description": "Handle re-installation correctly after uninstall.",
+    "acceptance_criteria": [
+      "OAuth flow handles existing credentials with Overwrite",
+      "Callback redirects to Shopify admin correctly",
+      "Frontend handles installed=true parameter",
+      "storeShopCredentials uses Overwrite: true for all parameters"
+    ],
     "priority": "high",
     "category": "functionality",
-    "status": "pending"
+    "status": "completed",
+    "passes": true,
+    "verification": {
+      "oauth_overwrite": "storeShopCredentials in credentials.js uses Overwrite: true for access-token, scopes, and installed-at",
+      "callback_redirect": "callback.js redirects to frontend with ?shop=X&app=Y&installed=true",
+      "frontend_handling": "App.jsx detects installed=true and redirects to Shopify admin /admin/apps/{API_KEY}",
+      "build_passes": "Vite build succeeds with no errors"
+    }
   },
   {
     "id": 120,
