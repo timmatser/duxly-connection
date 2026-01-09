@@ -503,8 +503,8 @@
     ],
     "priority": "critical",
     "category": "connector",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true
   },
   {
     "id": 142,

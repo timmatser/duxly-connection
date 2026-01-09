@@ -66,3 +66,26 @@
   - Original functionality (not duplicate of other published apps)
 - All 14 compliance stories verified as passing
 ---
+
+## 2026-01-09 - Story 141 & Progress Summary
+
+- **Verified Story 141**: App does not connect to third-party marketplaces (eBay, Amazon, etc.)
+
+### Overall Progress Summary
+**Verified as PASSING (24 stories):**
+- 100-104: OAuth, GDPR webhooks, HMAC, TLS
+- 108, 111, 112, 115: UI, Shopify API, no manual URL input, no auto-modals
+- 141, 150-163: Compliance/connector type confirmations
+
+**Remaining (33 stories) - categorized:**
+- **Code changes needed:** 106 (CDN App Bridge), 107 (Session Tokens - CRITICAL)
+- **Manual/browser testing:** 109, 110, 113, 114 (UI testing, reinstall flow)
+- **Partner Dashboard:** 105, 120-134 (listing requirements)
+- **Legal/documentation:** 140, 142, 143 (connector forms)
+- **Custom domain deployment:** 200-207 (connections.duxly.eu setup)
+
+### Critical Gap: Story 107 (Session Tokens)
+The app does NOT use session token authentication for API requests. This is a security vulnerability where API endpoints accept any shop parameter without verification. Needs implementation of:
+1. Frontend: Use `getSessionToken()` from App Bridge
+2. Backend: Validate JWT tokens before processing requests
+---
