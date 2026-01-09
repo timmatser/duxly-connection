@@ -136,41 +136,6 @@ async function getVariantCount(shop, accessToken) {
   return data.data?.productVariantsCount?.count || 0;
 }
 
-/**
- * Fetch inventory items count using GraphQL
- */
-async function getInventoryItemCount(shop, accessToken) {
-  const url = `https://${shop}/admin/api/${API_VERSION}/graphql.json`;
-
-  const query = `
-    query {
-      inventoryItemsCount {
-        count
-      }
-    }
-  `;
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'X-Shopify-Access-Token': accessToken,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ query }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`GraphQL error: ${response.status}`);
-  }
-
-  const data = await response.json();
-
-  if (data.errors) {
-    throw new Error(`GraphQL error: ${data.errors[0]?.message}`);
-  }
-
-  return data.data?.inventoryItemsCount?.count || 0;
-}
 
 /**
  * Get cached stats from DynamoDB
@@ -200,7 +165,6 @@ async function getCachedStats(appId, shop) {
         customers: response.Item.customers,
         variants: response.Item.variants,
         collections: response.Item.collections,
-        inventoryItems: response.Item.inventoryItems,
         fetchedAt: response.Item.fetchedAt,
         cached: true,
       };
@@ -237,7 +201,6 @@ async function cacheStats(appId, shop, stats) {
         customers: stats.customers,
         variants: stats.variants,
         collections: stats.collections,
-        inventoryItems: stats.inventoryItems,
         fetchedAt: stats.fetchedAt,
         ttl,
         cachedAt: new Date().toISOString(),
@@ -334,7 +297,7 @@ exports.handler = async (event) => {
     }
 
     // Fetch all stats in parallel
-    const [productCount, orderCount, customerCount, variantCount, collectionCount, inventoryItemCount] = await Promise.all([
+    const [productCount, orderCount, customerCount, variantCount, collectionCount] = await Promise.all([
       getProductCount(shop, accessToken).catch(err => {
         console.error('Failed to fetch product count:', err.message);
         return null;
@@ -355,10 +318,6 @@ exports.handler = async (event) => {
         console.error('Failed to fetch collection count:', err.message);
         return null;
       }),
-      getInventoryItemCount(shop, accessToken).catch(err => {
-        console.error('Failed to fetch inventory item count:', err.message);
-        return null;
-      }),
     ]);
 
     const stats = {
@@ -367,7 +326,6 @@ exports.handler = async (event) => {
       customers: customerCount,
       variants: variantCount,
       collections: collectionCount,
-      inventoryItems: inventoryItemCount,
       fetchedAt: new Date().toISOString(),
     };
 
