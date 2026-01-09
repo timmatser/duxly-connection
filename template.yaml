@@ -1,22 +1,12 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Shopify App Template - Serverless application for Shopify OAuth and credential storage
+Description: Shopify App Template - Serverless application for Shopify OAuth and credential storage (Multi-App Support)
 
 Parameters:
-  ShopifyApiKey:
-    Type: String
-    Description: Shopify API Key (Client ID)
-    NoEcho: false
-
-  ShopifyApiSecret:
-    Type: String
-    Description: Shopify API Secret
-    NoEcho: true
-
   ParameterStorePrefix:
     Type: String
     Description: Parameter Store prefix for storing credentials
-    Default: '/shopify/clients'
+    Default: '/shopify/duxly-connection'
 
   FrontendUrl:
     Type: String
@@ -25,13 +15,11 @@ Parameters:
 
 Globals:
   Function:
-    Runtime: python3.12
+    Runtime: nodejs20.x
     Timeout: 30
     MemorySize: 512
     Environment:
       Variables:
-        SHOPIFY_API_KEY: !Ref ShopifyApiKey
-        SHOPIFY_API_SECRET: !Ref ShopifyApiSecret
         PARAMETER_STORE_PREFIX: !Ref ParameterStorePrefix
 
 Resources:
@@ -51,6 +39,14 @@ Resources:
     Properties:
       CodeUri: backend/functions/
       Handler: auth.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+                - ssm:GetParameters
+                - ssm:GetParametersByPath
+              Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterStorePrefix}/*'
       Events:
         AuthEndpoint:
           Type: Api
@@ -74,6 +70,8 @@ Resources:
               Action:
                 - ssm:PutParameter
                 - ssm:GetParameter
+                - ssm:GetParameters
+                - ssm:GetParametersByPath
                 - ssm:DeleteParameter
               Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterStorePrefix}/*'
       Events:
@@ -96,6 +94,7 @@ Resources:
               Action:
                 - ssm:GetParameter
                 - ssm:GetParameters
+                - ssm:GetParametersByPath
               Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterStorePrefix}/*'
       Events:
         ProxyEndpoint:
@@ -111,12 +110,17 @@ Resources:
     Properties:
       CodeUri: backend/functions/
       Handler: stats.handler
-      Runtime: nodejs20.x
+      Environment:
+        Variables:
+          STATS_CACHE_TABLE: shopify-stats-cache
+          CACHE_TTL_SECONDS: '3600'
       Policies:
         - Statement:
             - Effect: Allow
               Action:
                 - ssm:GetParameter
+                - ssm:GetParameters
+                - ssm:GetParametersByPath
               Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterStorePrefix}/*'
             - Effect: Allow
               Action:
@@ -131,18 +135,50 @@ Resources:
             Path: /stats
             Method: GET
 
-  # Lambda Function - GDPR Compliance Webhooks
-  GdprFunction:
+  # Lambda Function - Disconnect
+  DisconnectFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: backend/functions/
-      Handler: gdpr.handler
+      Handler: disconnect.handler
+      Environment:
+        Variables:
+          STATS_CACHE_TABLE: shopify-stats-cache
       Policies:
         - Statement:
             - Effect: Allow
               Action:
                 - ssm:GetParameter
                 - ssm:GetParameters
+                - ssm:GetParametersByPath
+                - ssm:DeleteParameter
+              Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterStorePrefix}/*'
+            - Effect: Allow
+              Action:
+                - dynamodb:DeleteItem
+              Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/shopify-stats-cache'
+      Events:
+        DisconnectEndpoint:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ShopifyApi
+            Path: /disconnect
+            Method: POST
+
+  # Lambda Function - GDPR Compliance Webhooks
+  GdprFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/functions/
+      Handler: gdpr.handler
+      Runtime: python3.12
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+                - ssm:GetParameters
+                - ssm:GetParametersByPath
                 - ssm:DeleteParameter
                 - ssm:DescribeParameters
               Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterStorePrefix}/*'
@@ -169,6 +205,9 @@ Resources:
             RestApiId: !Ref ShopifyApi
             Path: /webhooks/gdpr/shop_redact
             Method: POST
+
+  # DynamoDB Table for Stats Cache (imported from existing table)
+  # Note: Table 'shopify-stats-cache' was created previously and is referenced here
 
   # S3 Bucket for Frontend
   FrontendBucket:
@@ -253,6 +292,14 @@ Outputs:
   ProxyFunctionArn:
     Description: Proxy Lambda Function ARN
     Value: !GetAtt ProxyFunction.Arn
+
+  StatsFunctionArn:
+    Description: Stats Lambda Function ARN
+    Value: !GetAtt StatsFunction.Arn
+
+  DisconnectFunctionArn:
+    Description: Disconnect Lambda Function ARN
+    Value: !GetAtt DisconnectFunction.Arn
 
   GdprFunctionArn:
     Description: GDPR Compliance Lambda Function ARN

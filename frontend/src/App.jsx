@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Provider as AppBridgeProvider } from '@shopify/app-bridge-react';
 import { AppProvider } from '@shopify/polaris';
 import Dashboard from './components/Dashboard';
 import ConnectScreen from './components/ConnectScreen';
@@ -9,8 +8,8 @@ import ConnectScreen from './components/ConnectScreen';
 const APP_ID = import.meta.env.VITE_APP_ID || 'duxly-connection';
 
 function App() {
-  const [config, setConfig] = useState(null);
   const [shop, setShop] = useState(null);
+  const [isEmbedded, setIsEmbedded] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isDisconnected, setIsDisconnected] = useState(false);
 
@@ -28,25 +27,20 @@ function App() {
     }
 
     // If host is present, app is loaded embedded from Shopify admin
+    // App Bridge CDN auto-initializes using the host param and API key from meta tag
     if (host) {
       setShop(shopParam);
-      setConfig({
-        apiKey: import.meta.env.VITE_SHOPIFY_API_KEY || '',
-        host: host,
-      });
+      setIsEmbedded(true);
       return;
     }
 
     // If shop is present but no host, this is the initial installation flow
     if (shopParam) {
-      // If already installed (coming back from OAuth callback), set up config
+      // If already installed (coming back from OAuth callback), redirect to embedded admin
       if (installed === 'true') {
-        setShop(shopParam);
-        setIsInstalled(true);
-        setConfig({
-          apiKey: import.meta.env.VITE_SHOPIFY_API_KEY || '',
-          host: window.btoa(`${shopParam}/admin`),
-        });
+        // Redirect to Shopify admin to load app in embedded context
+        const adminUrl = `https://${shopParam}/admin/apps/${import.meta.env.VITE_SHOPIFY_API_KEY}`;
+        window.location.href = adminUrl;
         return;
       }
 
@@ -66,7 +60,8 @@ function App() {
     );
   }
 
-  if (!config) {
+  // Show connect screen when not embedded
+  if (!isEmbedded) {
     return (
       <AppProvider>
         <ConnectScreen />
@@ -74,12 +69,11 @@ function App() {
     );
   }
 
+  // App is embedded - App Bridge CDN is auto-initialized
   return (
-    <AppBridgeProvider config={config}>
-      <AppProvider>
-        <Dashboard shop={shop} installed={isInstalled} />
-      </AppProvider>
-    </AppBridgeProvider>
+    <AppProvider>
+      <Dashboard shop={shop} installed={isInstalled} />
+    </AppProvider>
   );
 }
 
