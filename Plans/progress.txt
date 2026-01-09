@@ -81,6 +81,43 @@ Thread: N/A (current session)
 
 ---
 
+## 2026-01-09 - Story 109 (No Critical UI/Functional Errors)
+Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
+
+### What was verified
+- Build succeeds with no compilation errors (Vite 5.4.21)
+- Stats Lambda is being invoked (CloudWatch logs show requests)
+- Error states are handled gracefully throughout the app
+- No blank screens - ConnectScreen shows for non-embedded, Dashboard for embedded
+- No infinite loading - All loading states have timeouts
+
+### Verification details
+- Frontend build: `npm run build` → success, 440KB JS bundle
+- API CORS: `curl -X OPTIONS /stats` → 200
+- API Auth: `curl -X GET /stats` → 401 (expected without token)
+- Lambda logs show requests with some partial Shopify API errors (handled gracefully)
+- StatsGrid shows "--" for failed stats with warning banner
+- useSessionToken has 10-second timeout on App Bridge initialization
+
+### Known partial errors (handled gracefully, for Story 110):
+- `inventoryItemsCount` GraphQL field not available in API 2024-01
+- `403 Forbidden` on some customer API calls (likely scope issue)
+- These don't break the app - just show "--" for those stats
+
+### Files reviewed
+- `frontend/src/App.jsx` - State handling for embedded/disconnected
+- `frontend/src/components/Dashboard.jsx` - Main layout
+- `frontend/src/components/StatsGrid.jsx` - Error handling with Banner
+- `frontend/src/hooks/useSessionToken.js` - Timeout and error states
+- `backend/functions/stats.js` - Graceful degradation on API errors
+
+### Learnings for future iterations
+- Shopify API errors should be caught individually to allow partial success
+- Always provide visual feedback for loading/error states in embedded apps
+- App Bridge CDN may take time to initialize - handle async loading gracefully
+
+---
+
 ## Active Issues
 
 ### Story 301 - Hart Beach Reinstall
@@ -92,7 +129,7 @@ Thread: N/A (current session)
 
 ## Remaining Work by Category
 
-**Testing:** 109, 110, 113 (UI errors, reinstall flow)
+**Testing:** 110, 113 (partial UI errors, reinstall flow)
 **Partner Dashboard:** 105, 120-134 (listing requirements, icon, pricing)
 **Legal/Docs:** 140, 142, 143 (connector forms)
 **Custom Domain:** 200-207 (connections.duxly.eu setup)

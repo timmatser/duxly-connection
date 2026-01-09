@@ -36,8 +36,15 @@
     ],
     "priority": "critical",
     "category": "functionality",
-    "status": "pending",
-    "notes": "Task 302 (Stats API) resolved - needs verification"
+    "status": "completed",
+    "passes": true,
+    "verification": {
+      "build": "Vite build succeeds with no errors",
+      "api": "Stats Lambda invoked and returns proper responses",
+      "error_handling": "StatsGrid shows warning banner and '--' for failed stats",
+      "loading_states": "Skeleton loading + 10s timeout on App Bridge",
+      "no_blank_screens": "ConnectScreen for non-embedded, Dashboard for embedded"
+    }
   },
   {
     "id": 110,
