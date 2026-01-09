@@ -58,7 +58,17 @@
     "description": "No errors that partially prevent review.",
     "priority": "high",
     "category": "functionality",
-    "status": "pending"
+    "status": "completed",
+    "passes": true,
+    "resolution": {
+      "issue": "inventoryItemsCount GraphQL field does not exist in Shopify Admin API",
+      "fix": "Removed inventory items stat from both backend and frontend",
+      "files_changed": ["backend/functions/stats.js", "frontend/src/components/StatsGrid.jsx"],
+      "deployed": {
+        "lambda": "duxly-connection-StatsFunction-d7SIoegbePGJ updated",
+        "frontend": "S3 bucket synced, CloudFront invalidated"
+      }
+    }
   },
   {
     "id": 113,

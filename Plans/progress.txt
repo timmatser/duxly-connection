@@ -8,6 +8,8 @@
 - **Session tokens:** useSessionToken hook waits for App Bridge CDN to initialize before calling `shopify.idToken()`
 - **Custom Domain:** connections.duxly.eu → CloudFront → S3 (ACM cert in us-east-1)
 - **CloudFront Distribution ID:** EUQ32P5FIM9SW
+- **Shopify GraphQL:** Always validate queries - not all count fields exist (e.g., `inventoryItemsCount` doesn't exist)
+- **Lambda Deployment:** Use `/tmp/deploy` folder structure with flat JS files at root + node_modules
 
 ---
 
@@ -200,3 +202,29 @@ Thread: N/A (current session)
 **Testing:** 110, 113 (partial UI errors, reinstall flow)
 **Partner Dashboard:** 120-134 (listing requirements, icon, pricing)
 **Legal/Docs:** 140, 142, 143 (connector forms)
+
+## 2026-01-09 - Story 110 (App Free from Partial UI/Functional Errors)
+Thread: N/A (current session)
+
+### What was implemented
+- Removed `inventoryItemsCount` stat that used non-existent Shopify GraphQL field
+- `inventoryItemsCount` does not exist in Shopify Admin GraphQL API
+- Would also require `read_inventory` scope which is not currently requested
+- Reduced stats display from 6 to 5 (products, variants, collections, customers, orders)
+
+### Files changed
+- `backend/functions/stats.js` - Removed getInventoryItemCount function and references
+- `frontend/src/components/StatsGrid.jsx` - Removed inventoryItems state and display
+
+### Deployment
+- Lambda: duxly-connection-StatsFunction-d7SIoegbePGJ updated
+- Frontend: S3 bucket synced, CloudFront cache invalidated
+- API returns 401 without auth (expected), no GraphQL errors in response
+
+### Learnings for future iterations
+- **Shopify GraphQL API:** Not all count fields exist - `productVariantsCount` exists, `inventoryItemsCount` does not
+- Always validate GraphQL queries against the actual schema before implementing
+- Stats API now returns clean responses with 5 working stats
+- Inventory items would require adding `read_inventory` scope (requires app reinstall)
+
+---
