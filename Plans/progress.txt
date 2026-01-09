@@ -261,3 +261,39 @@ Thread: N/A (current session)
 - The GDPR `shop/redact` webhook cleanup happens 48 hours after uninstall, but reinstall works before that
 
 ---
+
+## 2026-01-09 - Ralph Agent Review
+Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
+
+### Analysis of Remaining Stories
+
+All remaining PRD stories require **manual action** - none can be implemented through code:
+
+**Partner Dashboard - Listing Requirements (Manual):**
+- 120: Test Credentials - Submit via Partner Dashboard
+- 121: Pricing Options - Configure in Partner Dashboard
+- 122: Icon Upload - Upload via Partner Dashboard
+- 123: Tags Review - Verify in Partner Dashboard
+- 124: App Card Subtitle - Review in Partner Dashboard
+- 126: Demo Screencast - Record video and upload
+- 128: App Name Fields - Configure in Partner Dashboard
+- 129: Pricing Details - Configure in Partner Dashboard
+- 130: App Details - Write and submit in Partner Dashboard
+- 133: Shopify Brand Graphics - Review and update media
+- 134: Geographic/API Requirements - Document in Partner Dashboard
+
+**Legal/Connector Requirements (Manual):**
+- 140: End Recipient Acknowledgement Form - Sign legal document
+- 142: International Connector Addendum - Sign legal document
+- 143: Available Integrations - Document data transfers
+
+**Merchant Action Required:**
+- 301: Hart Beach Reinstall - Requires merchant to reinstall app
+
+### Status
+All code-implementable stories have been completed and pass. Remaining work is:
+1. Partner Dashboard configuration and uploads
+2. Legal document signing
+3. Merchant action for reinstallation
+
+---
