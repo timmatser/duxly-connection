@@ -22,7 +22,8 @@
     ],
     "priority": "critical",
     "category": "embedded",
-    "status": "pending"
+    "status": "completed",
+    "passes": true
   },
   {
     "id": 109,

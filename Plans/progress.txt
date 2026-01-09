@@ -62,12 +62,26 @@ Thread: N/A (current session)
 
 ---
 
-## Active Issues
+## 2026-01-09 - Story 106 (App Bridge CDN)
+Thread: N/A (current session)
 
-### Story 106 - App Bridge CDN (Partially Resolved)
-- App Bridge IS loaded from CDN (index.html has script tag)
-- However, @shopify/app-bridge-react still in package.json dependencies
-- May need to remove npm dependency entirely for cleaner build
+### What was implemented
+- Removed @shopify/app-bridge-react dependency from package.json
+- Verified App Bridge loads from CDN (cdn.shopify.com/shopifycloud/app-bridge.js) via index.html script tag
+- Verified no code imports from @shopify/app-bridge or @shopify/app-bridge-react
+
+### Files changed
+- `frontend/package.json` - removed @shopify/app-bridge-react dependency
+
+### Verification
+- `npm ls @shopify/app-bridge-react` returns empty (not installed)
+- `grep -r "@shopify/app-bridge" frontend/src/` returns no matches
+- Build succeeds without the dependency
+- JS bundle size unchanged (package was never actually used)
+
+---
+
+## Active Issues
 
 ### Story 301 - Hart Beach Reinstall
 - App credentials exist, but shop access token missing
@@ -82,4 +96,3 @@ Thread: N/A (current session)
 **Partner Dashboard:** 105, 120-134 (listing requirements, icon, pricing)
 **Legal/Docs:** 140, 142, 143 (connector forms)
 **Custom Domain:** 200-207 (connections.duxly.eu setup)
-**Cleanup:** 106 (remove @shopify/app-bridge-react from package.json?)
