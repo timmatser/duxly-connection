@@ -1,0 +1,20 @@
+## Codebase Patterns
+- OAuth flow: Frontend at App.jsx redirects to /auth when shop param present, auth.js redirects to Shopify OAuth, callback.js exchanges code and stores token in Parameter Store
+- Parameter Store path: `/shopify/clients/{shop}/access-token` (SecureString), `/scopes`, `/installed-at`
+- Frontend uses Polaris UI components and App Bridge for Shopify admin embedding
+- Lambda functions in backend/functions/ handle all API endpoints
+
+---
+
+## 2026-01-09 - Story 100 & 101
+
+- **What was implemented**: Verified OAuth authentication and redirect flows
+- **Files reviewed**:
+  - `frontend/src/App.jsx` - Auto-redirect to /auth on install
+  - `backend/functions/auth.js` - OAuth initiation with HMAC state
+  - `backend/functions/callback.js` - Token exchange and redirect to UI
+- **Learnings for future iterations:**
+  - App.jsx handles three scenarios: embedded (has host), post-install (has shop+installed), and direct access (redirects to auth)
+  - Callback redirects with `?shop=xxx&installed=true` params to signal successful auth
+  - HMAC verification implemented in callback.js for OAuth security
+---
