@@ -10,7 +10,13 @@
     ],
     "priority": "high",
     "category": "functionality",
-    "status": "pending"
+    "status": "completed",
+    "passes": true,
+    "verification": {
+      "embedded_setting": "shopify.app.hart-beach.toml has embedded=true",
+      "toml_config": "All settings correct: application_url, redirect_urls, scopes, webhooks",
+      "iframe_loading": "Frontend accessible at connections.duxly.eu with App Bridge CDN meta tag"
+    }
   },
   {
     "id": 106,

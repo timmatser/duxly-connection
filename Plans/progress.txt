@@ -168,8 +168,35 @@ Thread: N/A (current session)
 
 ---
 
+## 2026-01-09 - Story 105 (App Capabilities Configuration)
+Thread: N/A (current session)
+
+### What was verified
+- `shopify.app.hart-beach.toml` has `embedded = true` setting
+- toml file contains all required configuration:
+  - application_url: https://connections.duxly.eu
+  - redirect_urls: API Gateway callback URL
+  - scopes: read_products, write_products, read_orders, read_customers
+  - webhooks with api_version: 2024-01
+- Frontend accessible at https://connections.duxly.eu
+- App Bridge CDN meta tag properly substituted (API key baked in at build time)
+- Frontend handles embedded/non-embedded modes correctly via App.jsx
+
+### Files reviewed
+- `shopify.app.hart-beach.toml` - Embedded app configuration
+- `frontend/src/App.jsx` - Embedded mode detection via host param
+- `frontend/index.html` - App Bridge CDN script and meta tag
+- `frontend/vite.config.js` - Build configuration
+
+### Learnings for future iterations
+- Vite automatically substitutes %VITE_VAR% in index.html at build time
+- The shopify-api-key meta tag is required for App Bridge CDN auto-initialization
+- Embedded mode is detected by presence of `host` URL parameter from Shopify Admin
+
+---
+
 ## Remaining Work by Category
 
 **Testing:** 110, 113 (partial UI errors, reinstall flow)
-**Partner Dashboard:** 105, 120-134 (listing requirements, icon, pricing)
+**Partner Dashboard:** 120-134 (listing requirements, icon, pricing)
 **Legal/Docs:** 140, 142, 143 (connector forms)
