@@ -1,18 +1,27 @@
 /**
  * Auth Lambda Function
  * Initiates the Shopify OAuth flow
+ * Supports multiple app registrations via dynamic credential loading
  */
 
 const crypto = require('crypto');
+const { getAppCredentials } = require('./credentials');
 
 exports.handler = async (event) => {
   try {
-    const { shop } = event.queryStringParameters || {};
+    const { shop, app } = event.queryStringParameters || {};
 
     if (!shop) {
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'Missing shop parameter' }),
+      };
+    }
+
+    if (!app) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Missing app parameter' }),
       };
     }
 
@@ -25,27 +34,41 @@ exports.handler = async (event) => {
       };
     }
 
-    const apiKey = process.env.SHOPIFY_API_KEY;
+    // Load app credentials from Parameter Store
+    let appCredentials;
+    try {
+      appCredentials = await getAppCredentials(app);
+    } catch (error) {
+      console.error(`Failed to load credentials for app ${app}:`, error.message);
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ error: 'App not found', message: `No credentials found for app: ${app}` }),
+      };
+    }
+
     const appUrl = process.env.APP_URL;
 
     // Required OAuth scopes for your app
-    const scopes = 'read_products,write_products,read_orders,write_orders';
+    const scopes = 'read_products,write_products,read_orders,read_customers';
 
-    // Generate a random state parameter for security
-    const state = crypto.randomBytes(16).toString('hex');
+    // Generate a random nonce for security
+    const nonce = crypto.randomBytes(16).toString('hex');
+
+    // Encode app identifier in the state parameter (JSON, base64 encoded)
+    const stateData = JSON.stringify({ nonce, app });
+    const state = Buffer.from(stateData).toString('base64');
 
     // Build the OAuth authorization URL
     const redirectUri = `${appUrl}/callback`;
-    const authUrl = `https://${shop}/admin/oauth/authorize?client_id=${apiKey}&scope=${scopes}&redirect_uri=${redirectUri}&state=${state}`;
+    const authUrl = `https://${shop}/admin/oauth/authorize?client_id=${appCredentials.clientId}&scope=${scopes}&redirect_uri=${redirectUri}&state=${state}`;
 
-    // In production, store the state parameter in a database or session
-    // For this template, we'll return it and validate it in the callback
+    console.log(`Initiating OAuth for shop ${shop} with app ${app}`);
 
     return {
       statusCode: 302,
       headers: {
         Location: authUrl,
-        'Set-Cookie': `shopify_oauth_state=${state}; Path=/; Secure; HttpOnly; SameSite=Lax`,
+        'Set-Cookie': `shopify_oauth_state=${nonce}; Path=/; Secure; HttpOnly; SameSite=Lax`,
       },
       body: '',
     };
@@ -53,7 +76,7 @@ exports.handler = async (event) => {
     console.error('Auth error:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Internal server error' }),
+      body: JSON.stringify({ error: 'Internal server error', message: error.message }),
     };
   }
 };

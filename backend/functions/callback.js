@@ -1,85 +1,54 @@
 /**
  * Callback Lambda Function
  * Handles the OAuth callback and stores credentials in Parameter Store
+ * Supports multiple app registrations via dynamic credential loading
  */
 
-const { SSMClient, PutParameterCommand } = require('@aws-sdk/client-ssm');
 const crypto = require('crypto');
+const { getAppCredentials, storeShopCredentials } = require('./credentials');
 
-const ssmClient = new SSMClient({ region: process.env.AWS_REGION || 'eu-central-1' });
+/**
+ * Parse state parameter to extract app identifier
+ * @param {string} state - Base64 encoded JSON state
+ * @returns {{nonce: string, app: string}}
+ */
+function parseState(state) {
+  try {
+    const decoded = Buffer.from(state, 'base64').toString('utf8');
+    return JSON.parse(decoded);
+  } catch (error) {
+    throw new Error('Invalid state parameter');
+  }
+}
 
 /**
  * Exchange authorization code for access token
  */
-async function exchangeCodeForToken(shop, code) {
-  const apiKey = process.env.SHOPIFY_API_KEY;
-  const apiSecret = process.env.SHOPIFY_API_SECRET;
-
+async function exchangeCodeForToken(shop, code, clientId, clientSecret) {
   const response = await fetch(`https://${shop}/admin/oauth/access_token`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      client_id: apiKey,
-      client_secret: apiSecret,
+      client_id: clientId,
+      client_secret: clientSecret,
       code: code,
     }),
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to exchange code: ${response.statusText}`);
+    const errorText = await response.text();
+    throw new Error(`Failed to exchange code: ${response.status} ${response.statusText} - ${errorText}`);
   }
 
   return await response.json();
 }
 
 /**
- * Store credentials in AWS Parameter Store
- */
-async function storeCredentials(shop, accessToken, scopes) {
-  const prefix = process.env.PARAMETER_STORE_PREFIX || '/shopify/clients';
-
-  // Store access token
-  const tokenParam = new PutParameterCommand({
-    Name: `${prefix}/${shop}/access-token`,
-    Value: accessToken,
-    Type: 'SecureString',
-    Description: `Shopify access token for ${shop}`,
-    Overwrite: true,
-  });
-
-  await ssmClient.send(tokenParam);
-
-  // Store scopes for reference
-  const scopesParam = new PutParameterCommand({
-    Name: `${prefix}/${shop}/scopes`,
-    Value: scopes,
-    Type: 'String',
-    Description: `Shopify scopes for ${shop}`,
-    Overwrite: true,
-  });
-
-  await ssmClient.send(scopesParam);
-
-  // Store installation timestamp
-  const timestampParam = new PutParameterCommand({
-    Name: `${prefix}/${shop}/installed-at`,
-    Value: new Date().toISOString(),
-    Type: 'String',
-    Description: `Installation timestamp for ${shop}`,
-    Overwrite: true,
-  });
-
-  await ssmClient.send(timestampParam);
-}
-
-/**
  * Verify HMAC signature from Shopify
  */
-function verifyHmac(queryParams, hmac) {
-  const apiSecret = process.env.SHOPIFY_API_SECRET;
-
+function verifyHmac(queryParams, hmac, apiSecret) {
   // Remove hmac and signature from params
   const params = { ...queryParams };
   delete params.hmac;
@@ -106,38 +75,72 @@ exports.handler = async (event) => {
     const { code, hmac, shop, state } = params;
 
     // Validate required parameters
-    if (!code || !hmac || !shop) {
+    if (!code || !hmac || !shop || !state) {
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'Missing required parameters' }),
       };
     }
 
-    // Verify HMAC
-    if (!verifyHmac(params, hmac)) {
+    // Parse state to get app identifier
+    let stateData;
+    try {
+      stateData = parseState(state);
+    } catch (error) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Invalid state parameter' }),
+      };
+    }
+
+    const { app } = stateData;
+    if (!app) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Missing app identifier in state' }),
+      };
+    }
+
+    // Load app credentials from Parameter Store
+    let appCredentials;
+    try {
+      appCredentials = await getAppCredentials(app);
+    } catch (error) {
+      console.error(`Failed to load credentials for app ${app}:`, error.message);
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ error: 'App not found', message: `No credentials found for app: ${app}` }),
+      };
+    }
+
+    // Verify HMAC with the correct app secret
+    if (!verifyHmac(params, hmac, appCredentials.clientSecret)) {
+      console.error(`HMAC verification failed for shop ${shop}, app ${app}`);
       return {
         statusCode: 403,
         body: JSON.stringify({ error: 'Invalid HMAC signature' }),
       };
     }
 
-    // In production, verify the state parameter matches what was stored
-    // For this template, we'll skip this check
-
     // Exchange code for access token
-    const tokenData = await exchangeCodeForToken(shop, code);
+    const tokenData = await exchangeCodeForToken(
+      shop,
+      code,
+      appCredentials.clientId,
+      appCredentials.clientSecret
+    );
 
-    // Store credentials in Parameter Store
-    await storeCredentials(shop, tokenData.access_token, tokenData.scope);
+    // Store credentials in Parameter Store under /shops/{appId}/{shop}/
+    await storeShopCredentials(app, shop, tokenData.access_token, tokenData.scope);
 
-    console.log(`Successfully stored credentials for shop: ${shop}`);
+    console.log(`Successfully stored credentials for shop: ${shop}, app: ${app}`);
 
     // Redirect to frontend with success message
     const frontendUrl = process.env.FRONTEND_URL;
     return {
       statusCode: 302,
       headers: {
-        Location: `${frontendUrl}?shop=${shop}&installed=true`,
+        Location: `${frontendUrl}?shop=${shop}&app=${app}&installed=true`,
       },
       body: '',
     };

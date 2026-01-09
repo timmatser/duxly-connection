@@ -15,8 +15,7 @@ export class ShopifyAppStack extends cdk.Stack {
     super(scope, id, props);
 
     // Environment variables from context or defaults
-    const shopifyApiKey = process.env.SHOPIFY_API_KEY || '';
-    const shopifyApiSecret = process.env.SHOPIFY_API_SECRET || '';
+    // Note: SHOPIFY_API_KEY/SECRET removed - now loaded dynamically from Parameter Store per app
     const parameterStorePrefix = process.env.PARAMETER_STORE_PREFIX || '/shopify/duxly-connection';
 
     // S3 bucket for hosting the frontend
@@ -64,8 +63,6 @@ export class ShopifyAppStack extends cdk.Stack {
       handler: 'auth.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../../backend/functions')),
       environment: {
-        SHOPIFY_API_KEY: shopifyApiKey,
-        SHOPIFY_API_SECRET: shopifyApiSecret,
         PARAMETER_STORE_PREFIX: parameterStorePrefix,
       },
       timeout: cdk.Duration.seconds(30),
@@ -77,8 +74,6 @@ export class ShopifyAppStack extends cdk.Stack {
       handler: 'callback.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../../backend/functions')),
       environment: {
-        SHOPIFY_API_KEY: shopifyApiKey,
-        SHOPIFY_API_SECRET: shopifyApiSecret,
         FRONTEND_URL: `https://${distribution.distributionDomainName}`,
         PARAMETER_STORE_PREFIX: parameterStorePrefix,
       },
@@ -91,8 +86,6 @@ export class ShopifyAppStack extends cdk.Stack {
       handler: 'proxy.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../../backend/functions')),
       environment: {
-        SHOPIFY_API_KEY: shopifyApiKey,
-        SHOPIFY_API_SECRET: shopifyApiSecret,
         PARAMETER_STORE_PREFIX: parameterStorePrefix,
       },
       timeout: cdk.Duration.seconds(30),
@@ -104,8 +97,6 @@ export class ShopifyAppStack extends cdk.Stack {
       handler: 'stats.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../../backend/functions')),
       environment: {
-        SHOPIFY_API_KEY: shopifyApiKey,
-        SHOPIFY_API_SECRET: shopifyApiSecret,
         PARAMETER_STORE_PREFIX: parameterStorePrefix,
         STATS_CACHE_TABLE: statsCacheTable.tableName,
         CACHE_TTL_SECONDS: '3600', // 1 hour cache
@@ -132,12 +123,14 @@ export class ShopifyAppStack extends cdk.Stack {
     statsCacheTable.grantReadWriteData(disconnectFunction);
 
     // Grant Parameter Store permissions to Lambda functions
+    // Includes GetParametersByPath for multi-app credential loading
     const parameterStorePolicy = new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
       actions: [
         'ssm:PutParameter',
         'ssm:GetParameter',
         'ssm:GetParameters',
+        'ssm:GetParametersByPath',
         'ssm:DeleteParameter',
       ],
       resources: [

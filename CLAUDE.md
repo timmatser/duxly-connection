@@ -85,33 +85,46 @@ aws logs tail /aws/lambda/ShopifyAppStack-StatsFunction --follow
 
 **Root `.env`** (for CDK deployment):
 ```
-SHOPIFY_API_KEY=xxx
-SHOPIFY_API_SECRET=xxx
 AWS_REGION=eu-central-1
-APP_URL=https://[API_GATEWAY_URL]/prod
-FRONTEND_URL=https://[CLOUDFRONT_URL]
+PARAMETER_STORE_PREFIX=/shopify/duxly-connection
 ```
+
+Note: `SHOPIFY_API_KEY` and `SHOPIFY_API_SECRET` are no longer used in CDK deployment. Credentials are loaded dynamically from Parameter Store per app registration.
 
 **Frontend `.env`**:
 ```
-VITE_SHOPIFY_API_KEY=xxx
+VITE_SHOPIFY_API_KEY=xxx          # Client ID for this app registration
 VITE_API_URL=https://[API_GATEWAY_URL]/prod
+VITE_APP_ID=duxly-connection      # App identifier for multi-app support
 ```
 
 ## OAuth Installation Flow
 
-1. Merchant clicks install → frontend redirects to `/auth?shop=xxx`
-2. `auth.js` Lambda redirects to Shopify OAuth with scopes
-3. Merchant approves → Shopify redirects to `/callback` with code
-4. `callback.js` exchanges code for token, stores in Parameter Store at `/shopify/clients/{shop}/access-token`
-5. Redirects to frontend with `?shop=xxx&installed=true`
+1. Merchant clicks install → frontend redirects to `/auth?shop=xxx&app={VITE_APP_ID}`
+2. `auth.js` Lambda loads credentials for that app, redirects to Shopify OAuth with scopes
+3. Merchant approves → Shopify redirects to `/callback` with code and state (containing app ID)
+4. `callback.js` extracts app from state, loads client-secret, exchanges code for token
+5. Stores credentials at `/shopify/duxly-connection/shops/{appId}/{shop}/access-token`
+6. Redirects to frontend with `?shop=xxx&app={appId}&installed=true`
 
 ## Parameter Store Structure
 
-Credentials stored at: `/shopify/clients/{shop-domain}/`
-- `access-token` (SecureString)
-- `scopes` (String)
-- `installed-at` (String, ISO timestamp)
+**App credentials** (one per app registration):
+```
+/shopify/duxly-connection/apps/{appId}/
+  ├── client-id (String)
+  ├── client-secret (SecureString)
+  ├── name (String)
+  └── status (String)
+```
+
+**Shop credentials** (per app per shop):
+```
+/shopify/duxly-connection/shops/{appId}/{shop-domain}/
+  ├── access-token (SecureString)
+  ├── scopes (String)
+  └── installed-at (String, ISO timestamp)
+```
 
 ## AWS Region
 
@@ -123,3 +136,71 @@ Required settings in Shopify Partners Dashboard:
 - **App URL**: CloudFront distribution URL
 - **Allowed redirect URL**: `{API_GATEWAY_URL}/prod/callback`
 - **Embedded app**: Enabled
+
+## Multi-App Architecture (Temporary)
+
+This app uses multiple Shopify app registrations as a workaround until Shopify approves the public listing.
+
+### Why Multiple Registrations?
+
+Shopify custom distribution apps can only be installed on **one shop**. To test with multiple clients before public listing approval, we create separate app registrations (e.g., `duxly-connection`, `duxly-connection-hart-beach`).
+
+Each registration:
+- Has unique `client_id` and `client_secret`
+- Points to the **same backend** Lambda functions
+- Has its **own frontend deployment** with `VITE_APP_ID` baked in
+
+### How It Works
+
+**Backend (shared):**
+- All app registrations share the same Lambda functions
+- Lambda functions load credentials dynamically from Parameter Store based on app ID
+- Session token verification looks up the app by JWT `aud` claim (client_id)
+- Cache keys include app ID to keep data separate: `{appId}:{shop}`
+
+**Frontend (per-app deployment):**
+- Each app registration has its own S3 bucket + CloudFront distribution
+- `VITE_APP_ID` and `VITE_SHOPIFY_API_KEY` are baked in at build time
+- Frontend passes `app` parameter to `/auth` for OAuth flow
+
+### Session Token Authentication
+
+For authenticated endpoints (stats, disconnect):
+1. Frontend includes session token in `Authorization: Bearer <token>` header
+2. Backend decodes JWT to get `aud` claim (client_id)
+3. Looks up app credentials by client_id in Parameter Store
+4. Verifies signature with the correct app's client_secret
+5. Extracts shop from `dest` claim, app ID from lookup result
+
+### Adding a New App Registration
+
+1. **Create Shopify app** in Partners Dashboard
+2. **Store credentials in Parameter Store:**
+   ```bash
+   aws ssm put-parameter --name "/shopify/duxly-connection/apps/{appId}/client-id" --value "xxx" --type String
+   aws ssm put-parameter --name "/shopify/duxly-connection/apps/{appId}/client-secret" --value "xxx" --type SecureString
+   aws ssm put-parameter --name "/shopify/duxly-connection/apps/{appId}/name" --value "App Name" --type String
+   aws ssm put-parameter --name "/shopify/duxly-connection/apps/{appId}/status" --value "active" --type String
+   ```
+3. **Create frontend `.env.{appId}`:**
+   ```
+   VITE_SHOPIFY_API_KEY={client_id}
+   VITE_API_URL=https://xehi9a6w6e.execute-api.eu-central-1.amazonaws.com/prod
+   VITE_APP_ID={appId}
+   ```
+4. **Build and deploy frontend:**
+   ```bash
+   cd frontend
+   cp .env.{appId} .env
+   npm run build
+   aws s3 sync dist s3://{app-specific-bucket} --delete
+   ```
+5. **Configure Shopify app URLs** in Partners Dashboard to point to the new CloudFront distribution
+
+### Future: Public App
+
+Once approved as a public app:
+- Consolidate to a single app registration
+- All shops use the same `VITE_APP_ID`
+- Credential paths simplify to single app
+- Multi-app logic remains but only one app will exist

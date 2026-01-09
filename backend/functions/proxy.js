@@ -2,33 +2,18 @@
  * Proxy Lambda Function
  * Handles app proxy requests from Shopify storefront
  * Can be used to fetch data for custom storefronts
+ * Supports multiple app registrations via dynamic credential loading
  */
 
-const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
 const crypto = require('crypto');
-
-const ssmClient = new SSMClient({ region: process.env.AWS_REGION || 'eu-central-1' });
-
-/**
- * Get access token from Parameter Store
- */
-async function getAccessToken(shop) {
-  const prefix = process.env.PARAMETER_STORE_PREFIX || '/shopify/clients';
-
-  const command = new GetParameterCommand({
-    Name: `${prefix}/${shop}/access-token`,
-    WithDecryption: true,
-  });
-
-  const response = await ssmClient.send(command);
-  return response.Parameter.Value;
-}
+const { getShopAccessToken, getAppCredentials } = require('./credentials');
 
 /**
  * Verify proxy signature from Shopify
  */
-function verifyProxySignature(queryParams, signature) {
-  const apiSecret = process.env.SHOPIFY_API_SECRET;
+async function verifyProxySignature(queryParams, signature, appId) {
+  // Load app credentials to get the secret
+  const appCredentials = await getAppCredentials(appId);
 
   // Remove signature from params
   const params = { ...queryParams };
@@ -42,7 +27,7 @@ function verifyProxySignature(queryParams, signature) {
 
   // Generate signature
   const hash = crypto
-    .createHmac('sha256', apiSecret)
+    .createHmac('sha256', appCredentials.clientSecret)
     .update(sortedParams)
     .digest('hex');
 
@@ -79,18 +64,19 @@ async function callShopifyApi(shop, accessToken, endpoint, method = 'GET', body 
 exports.handler = async (event) => {
   try {
     const params = event.queryStringParameters || {};
-    const { shop, signature } = params;
+    const { shop, app, signature } = params;
 
-    if (!shop || !signature) {
+    if (!shop || !app || !signature) {
       return {
         statusCode: 400,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: 'Missing required parameters' }),
+        body: JSON.stringify({ error: 'Missing required parameters (shop, app, signature)' }),
       };
     }
 
-    // Verify the signature
-    if (!verifyProxySignature(params, signature)) {
+    // Verify the signature with the correct app secret
+    const isValid = await verifyProxySignature(params, signature, app);
+    if (!isValid) {
       return {
         statusCode: 403,
         headers: { 'Content-Type': 'application/json' },
@@ -99,7 +85,7 @@ exports.handler = async (event) => {
     }
 
     // Get access token from Parameter Store
-    const accessToken = await getAccessToken(shop);
+    const accessToken = await getShopAccessToken(app, shop);
 
     // Parse request body if present
     const requestBody = event.body ? JSON.parse(event.body) : {};

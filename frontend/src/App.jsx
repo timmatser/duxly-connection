@@ -4,6 +4,10 @@ import { AppProvider } from '@shopify/polaris';
 import Dashboard from './components/Dashboard';
 import ConnectScreen from './components/ConnectScreen';
 
+// App identifier for multi-app support
+// Each frontend deployment has its own VITE_APP_ID baked in at build time
+const APP_ID = import.meta.env.VITE_APP_ID || 'duxly-connection';
+
 function App() {
   const [config, setConfig] = useState(null);
   const [shop, setShop] = useState(null);
@@ -47,8 +51,9 @@ function App() {
       }
 
       // Otherwise, redirect to auth to start OAuth
+      // Pass app parameter for multi-app credential loading
       const apiUrl = import.meta.env.VITE_API_URL || '';
-      window.location.href = `${apiUrl}/auth?shop=${encodeURIComponent(shopParam)}`;
+      window.location.href = `${apiUrl}/auth?shop=${encodeURIComponent(shopParam)}&app=${encodeURIComponent(APP_ID)}`;
     }
   }, []);
 
