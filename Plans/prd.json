@@ -42,8 +42,8 @@
     ],
     "priority": "critical",
     "category": "functionality",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true
   },
   {
     "id": 103,
@@ -58,8 +58,8 @@
     ],
     "priority": "critical",
     "category": "functionality",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true
   },
   {
     "id": 104,
@@ -75,8 +75,8 @@
     ],
     "priority": "critical",
     "category": "functionality",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true
   },
   {
     "id": 105,

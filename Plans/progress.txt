@@ -3,6 +3,8 @@
 - Parameter Store path: `/shopify/clients/{shop}/access-token` (SecureString), `/scopes`, `/installed-at`
 - Frontend uses Polaris UI components and App Bridge for Shopify admin embedding
 - Lambda functions in backend/functions/ handle all API endpoints
+- GDPR webhooks: Use gdpr.py (Python), deployed at `/webhooks/gdpr/...` - verifies HMAC before processing
+- Deployed CloudFormation stack name: `duxly-connection` (not ShopifyAppStack)
 
 ---
 
@@ -17,4 +19,21 @@
   - App.jsx handles three scenarios: embedded (has host), post-install (has shop+installed), and direct access (redirects to auth)
   - Callback redirects with `?shop=xxx&installed=true` params to signal successful auth
   - HMAC verification implemented in callback.js for OAuth security
+---
+
+## 2026-01-09 - Story 102, 103, 104
+
+- **What was verified**: GDPR compliance webhooks, HMAC verification, TLS/SSL certificates
+- **Files recovered/reviewed**:
+  - `backend/functions/gdpr.py` - GDPR webhook handler (Python, was deployed but not in repo)
+  - Deployed endpoints verified at API Gateway
+- **Key findings**:
+  - GDPR webhooks deployed at `/webhooks/gdpr/customers_data_request`, `customers_redact`, `shop_redact`
+  - HMAC verification uses timing-safe comparison via `hmac.compare_digest()`
+  - shop/redact actually deletes shop data from Parameter Store
+  - CloudFront and API Gateway both use valid AWS-managed TLS certificates
+- **Learnings for future iterations:**
+  - Deployed stack is `duxly-connection`, not `ShopifyAppStack`
+  - GDPR handler is Python (`gdpr.py`), other handlers are JavaScript
+  - AWS CloudFront/API Gateway automatically provide valid TLS - no custom cert management needed
 ---
