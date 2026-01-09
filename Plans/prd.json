@@ -138,8 +138,8 @@
     ],
     "priority": "critical",
     "category": "functionality",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true
   },
   {
     "id": 109,
@@ -186,8 +186,8 @@
     ],
     "priority": "critical",
     "category": "functionality",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true
   },
   {
     "id": 112,
@@ -201,8 +201,8 @@
     ],
     "priority": "high",
     "category": "functionality",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true
   },
   {
     "id": 113,
@@ -248,8 +248,8 @@
     ],
     "priority": "high",
     "category": "embedded",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true
   },
   {
     "id": 120,

@@ -37,3 +37,20 @@
   - GDPR handler is Python (`gdpr.py`), other handlers are JavaScript
   - AWS CloudFront/API Gateway automatically provide valid TLS - no custom cert management needed
 ---
+
+## 2026-01-09 - Story 108, 111, 112, 115
+
+- **What was verified**: UI functionality, Shopify API usage, shop domain handling, modal behavior
+- **Files reviewed**:
+  - `frontend/src/components/Dashboard.jsx` - Main UI with stats, connection indicator, quick actions
+  - `backend/functions/stats.js` - Shopify Admin API integration with versioning (2024-01) and rate limiting
+  - `frontend/src/App.jsx` - Shop parameter handling (no manual .myshopify.com input)
+- **Key findings**:
+  - Story 108: Dashboard shows meaningful content (connection status, store stats, action buttons)
+  - Story 111: Uses Shopify Admin API via `/admin/api/2024-01/` with stored access tokens
+  - Story 112: Shop domain obtained automatically via OAuth, no manual URL input fields
+  - Story 115: Only modal is DisconnectModal, triggered by explicit button click
+- **Gaps identified**:
+  - Story 106: Uses npm @shopify/app-bridge-react instead of CDN (may need clarification)
+  - Story 107: **CRITICAL** - No session token authentication for API requests
+---
