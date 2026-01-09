@@ -546,8 +546,8 @@
     ],
     "priority": "critical",
     "category": "compliance",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true
   },
   {
     "id": 151,
@@ -560,8 +560,8 @@
     ],
     "priority": "critical",
     "category": "compliance",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true
   },
   {
     "id": 152,
@@ -574,8 +574,8 @@
     ],
     "priority": "critical",
     "category": "compliance",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true
   },
   {
     "id": 153,
@@ -588,8 +588,8 @@
     ],
     "priority": "critical",
     "category": "compliance",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true
   },
   {
     "id": 154,
@@ -602,8 +602,8 @@
     ],
     "priority": "critical",
     "category": "compliance",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true
   },
   {
     "id": 155,
@@ -616,8 +616,8 @@
     ],
     "priority": "critical",
     "category": "compliance",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true
   },
   {
     "id": 156,
@@ -630,8 +630,8 @@
     ],
     "priority": "critical",
     "category": "compliance",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true
   },
   {
     "id": 157,
@@ -644,8 +644,8 @@
     ],
     "priority": "critical",
     "category": "compliance",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true
   },
   {
     "id": 158,
@@ -658,8 +658,8 @@
     ],
     "priority": "critical",
     "category": "compliance",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true
   },
   {
     "id": 159,
@@ -672,8 +672,8 @@
     ],
     "priority": "critical",
     "category": "compliance",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true
   },
   {
     "id": 160,
@@ -686,8 +686,8 @@
     ],
     "priority": "critical",
     "category": "compliance",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true
   },
   {
     "id": 161,
@@ -700,8 +700,8 @@
     ],
     "priority": "critical",
     "category": "compliance",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true
   },
   {
     "id": 162,
@@ -714,8 +714,8 @@
     ],
     "priority": "critical",
     "category": "compliance",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true
   },
   {
     "id": 163,
@@ -728,8 +728,8 @@
     ],
     "priority": "high",
     "category": "compliance",
-    "status": "pending",
-    "passes": false
+    "status": "verified",
+    "passes": true
   },
   {
     "id": 200,
