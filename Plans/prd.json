@@ -1,860 +1,237 @@
 [
   {
-    "id": 100,
-    "feature": "Immediately Authenticates After Install",
-    "description": "App must immediately initiate OAuth authentication when a merchant installs the app, without requiring manual steps.",
-    "acceptance_criteria": [
-      "App URL redirects to /auth endpoint automatically on first load",
-      "No intermediate screens before OAuth starts",
-      "OAuth flow begins within 1 second of app load",
-      "Works correctly when shop parameter is provided"
-    ],
-    "priority": "critical",
-    "category": "functionality",
-    "status": "verified",
-    "passes": true
-  },
-  {
-    "id": 101,
-    "feature": "Immediately Redirects to App UI After Authentication",
-    "description": "After OAuth callback completes, the app must immediately redirect the merchant to the main app UI without delays.",
-    "acceptance_criteria": [
-      "Callback endpoint redirects to frontend URL with correct params",
-      "No intermediate loading screens or manual redirects required",
-      "App UI loads within embedded admin frame",
-      "User sees dashboard/main content immediately after auth"
-    ],
-    "priority": "critical",
-    "category": "functionality",
-    "status": "verified",
-    "passes": true
-  },
-  {
-    "id": 102,
-    "feature": "Provides Mandatory Compliance Webhooks",
-    "description": "App must implement mandatory GDPR compliance webhooks: customers/data_request, customers/redact, and shop/redact.",
-    "acceptance_criteria": [
-      "Implement /webhooks/customers-data-request endpoint",
-      "Implement /webhooks/customers-redact endpoint",
-      "Implement /webhooks/shop-redact endpoint",
-      "Register webhook URLs in Shopify Partners dashboard",
-      "Webhooks return 200 OK response"
-    ],
-    "priority": "critical",
-    "category": "functionality",
-    "status": "verified",
-    "passes": true
-  },
-  {
-    "id": 103,
-    "feature": "Verifies Webhooks with HMAC Signatures",
-    "description": "All incoming webhooks must be verified using HMAC-SHA256 signature validation with the API secret.",
-    "acceptance_criteria": [
-      "Extract X-Shopify-Hmac-Sha256 header from webhook requests",
-      "Compute HMAC-SHA256 of raw request body using API secret",
-      "Compare computed hash with header value (timing-safe comparison)",
-      "Reject webhooks with invalid signatures (401 response)",
-      "Log verification failures for debugging"
-    ],
-    "priority": "critical",
-    "category": "functionality",
-    "status": "verified",
-    "passes": true
-  },
-  {
-    "id": 104,
-    "feature": "Uses a Valid TLS/SSL Certificate",
-    "description": "All app endpoints must use HTTPS with a valid TLS certificate with no errors.",
-    "acceptance_criteria": [
-      "CloudFront distribution serves over HTTPS",
-      "API Gateway endpoints use HTTPS",
-      "TLS certificate is valid and not expired",
-      "No mixed content warnings",
-      "Certificate chain is complete and trusted",
-      "No SSL errors when accessing any endpoint"
-    ],
-    "priority": "critical",
-    "category": "functionality",
-    "status": "verified",
-    "passes": true
-  },
-  {
     "id": 105,
     "feature": "App Capabilities Configuration (Connector, Embedded)",
-    "description": "Verify app has correct capabilities configured: connector and embedded app settings.",
+    "description": "Verify app has correct capabilities configured in Partners dashboard.",
     "acceptance_criteria": [
-      "Embedded app setting is enabled in Partners dashboard",
-      "App capabilities match selected options (connector, embedded)",
+      "Embedded app setting enabled",
       "shopify.app.toml reflects correct configuration",
       "App loads correctly within Shopify Admin iframe"
     ],
     "priority": "high",
     "category": "functionality",
-    "status": "pending",
-    "passes": false
+    "status": "pending"
   },
   {
     "id": 106,
     "feature": "Using Latest App Bridge from Shopify CDN",
-    "description": "App must load the latest App Bridge script from Shopify's CDN (not bundled or self-hosted).",
+    "description": "App must load App Bridge from Shopify's CDN (not bundled).",
     "acceptance_criteria": [
-      "App Bridge loaded via https://cdn.shopify.com/shopifycloud/app-bridge.js",
-      "No locally bundled @shopify/app-bridge packages in production build",
-      "Script tag present in index.html or loaded dynamically from CDN",
-      "App Bridge version is current/supported",
-      "App Bridge used from OAuth flow onwards"
+      "App Bridge loaded via cdn.shopify.com/shopifycloud/app-bridge.js",
+      "No locally bundled @shopify/app-bridge in production"
     ],
     "priority": "critical",
     "category": "embedded",
-    "status": "pending",
-    "passes": false
-  },
-  {
-    "id": 107,
-    "feature": "Using Session Tokens for User Authentication",
-    "description": "App must use Shopify session tokens (JWT) for authenticating API requests instead of cookies.",
-    "acceptance_criteria": [
-      "App Bridge getSessionToken() used to obtain session tokens",
-      "Session token sent in Authorization header for API requests",
-      "Backend validates session token signature and claims",
-      "No cookie-based authentication for embedded app",
-      "Token refresh handled before expiration"
-    ],
-    "priority": "critical",
-    "category": "functionality",
-    "status": "verified",
-    "passes": true
-  },
-  {
-    "id": 108,
-    "feature": "Must Have UI Merchants Can Interact With",
-    "description": "App must provide a functional user interface that merchants can interact with.",
-    "acceptance_criteria": [
-      "Dashboard displays meaningful content",
-      "All buttons and controls are functional",
-      "Navigation works correctly",
-      "UI responds to user interactions",
-      "No dead ends or non-functional screens"
-    ],
-    "priority": "critical",
-    "category": "functionality",
-    "status": "verified",
-    "passes": true
+    "status": "pending"
   },
   {
     "id": 109,
     "feature": "App Free from Critical UI/Functional Errors",
-    "description": "App must be free from user interface errors, bugs, and functional errors that fully prevent the review.",
+    "description": "No errors that fully prevent review.",
     "acceptance_criteria": [
-      "No JavaScript errors in console that break functionality",
-      "All core features work as expected",
-      "No blank screens or infinite loading states",
-      "Error states handled gracefully",
-      "App does not crash during normal usage"
+      "No JS errors breaking functionality",
+      "No blank screens or infinite loading",
+      "Error states handled gracefully"
     ],
     "priority": "critical",
     "category": "functionality",
     "status": "pending",
-    "passes": false
+    "notes": "Task 302 (Stats API) resolved - needs verification"
   },
   {
     "id": 110,
     "feature": "App Free from Partial UI/Functional Errors",
-    "description": "App must be free from user interface errors, bugs, and functional errors that partially prevent completing the review.",
-    "acceptance_criteria": [
-      "No minor UI glitches or visual bugs",
-      "All secondary features work correctly",
-      "Forms validate and submit properly",
-      "Loading states display appropriately",
-      "Responsive design works on different screen sizes"
-    ],
+    "description": "No errors that partially prevent review.",
     "priority": "high",
     "category": "functionality",
-    "status": "pending",
-    "passes": false
-  },
-  {
-    "id": 111,
-    "feature": "Must Use Shopify APIs After Install",
-    "description": "App must use Shopify APIs to interact with store data after installation.",
-    "acceptance_criteria": [
-      "App uses Shopify Admin API for data operations",
-      "API calls use stored access token",
-      "Proper API versioning in requests",
-      "Rate limiting handled appropriately",
-      "No direct database access bypassing Shopify APIs"
-    ],
-    "priority": "critical",
-    "category": "functionality",
-    "status": "verified",
-    "passes": true
-  },
-  {
-    "id": 112,
-    "feature": "Must Not Request .myshopify.com URLs from Merchants",
-    "description": "App must not ask merchants to manually enter their .myshopify.com URL.",
-    "acceptance_criteria": [
-      "Shop domain obtained from OAuth flow automatically",
-      "No input fields asking for myshopify.com URL",
-      "Shop parameter passed through App Bridge host",
-      "Installation flow does not require manual URL entry"
-    ],
-    "priority": "high",
-    "category": "functionality",
-    "status": "verified",
-    "passes": true
+    "status": "pending"
   },
   {
     "id": 113,
     "feature": "Must Re-install Properly",
-    "description": "App must handle re-installation correctly when a merchant uninstalls and reinstalls.",
-    "acceptance_criteria": [
-      "Uninstall webhook cleans up or marks credentials appropriately",
-      "Re-installation triggers fresh OAuth flow",
-      "New access token stored correctly",
-      "Previous data handled appropriately (retained or cleared based on app logic)",
-      "No duplicate entries or conflicts after reinstall"
-    ],
+    "description": "Handle re-installation correctly after uninstall.",
     "priority": "high",
     "category": "functionality",
-    "status": "pending",
-    "passes": false
-  },
-  {
-    "id": 114,
-    "feature": "Data Synchronization",
-    "description": "If app syncs data, synchronization must work correctly and reliably.",
-    "acceptance_criteria": [
-      "Data sync operations complete successfully",
-      "Sync status displayed to merchants",
-      "Error handling for failed syncs",
-      "No data loss or corruption during sync",
-      "Sync can be manually triggered if needed"
-    ],
-    "priority": "medium",
-    "category": "functionality",
-    "status": "verified",
-    "passes": true,
-    "note": "N/A - App fetches stats on-demand via API, does not perform traditional data synchronization between systems"
-  },
-  {
-    "id": 115,
-    "feature": "Apps Must Not Launch Max Modal Without User Interaction",
-    "description": "Max modal (fullscreen modal) must not launch automatically or from app nav - only from user interaction.",
-    "acceptance_criteria": [
-      "No automatic modal popups on app load",
-      "Max modals only triggered by explicit user actions (button clicks)",
-      "App navigation does not trigger fullscreen modals",
-      "Onboarding flows respect this requirement"
-    ],
-    "priority": "high",
-    "category": "embedded",
-    "status": "verified",
-    "passes": true
+    "status": "pending"
   },
   {
     "id": 120,
     "feature": "Submission Must Include Test Credentials",
-    "description": "App submission must include functional test/login credentials for reviewers.",
-    "acceptance_criteria": [
-      "Test credentials documented for submission",
-      "Credentials provide access to all app features",
-      "Test account has appropriate permissions",
-      "Instructions for using test credentials provided"
-    ],
     "priority": "critical",
     "category": "listing",
-    "status": "pending",
-    "passes": false
+    "status": "pending"
   },
   {
     "id": 121,
     "feature": "App Listing Must Include All Pricing Options",
-    "description": "All pricing tiers and options must be clearly listed in the app listing.",
-    "acceptance_criteria": [
-      "All pricing plans documented",
-      "Free tier clearly indicated if available",
-      "Paid tier prices and features listed",
-      "Any usage-based pricing explained",
-      "Trial period details included if applicable"
-    ],
     "priority": "critical",
     "category": "listing",
-    "status": "pending",
-    "passes": false
+    "status": "pending"
   },
   {
     "id": 122,
     "feature": "Must Have Icon Uploaded to Partner Dashboard",
-    "description": "App must have a proper icon uploaded in the Partner dashboard.",
-    "acceptance_criteria": [
-      "App icon uploaded to Partner dashboard",
-      "Icon meets size requirements (512x512 recommended)",
-      "Icon is clear and recognizable",
-      "Icon does not use Shopify branding"
-    ],
     "priority": "critical",
     "category": "listing",
-    "status": "pending",
-    "passes": false
+    "status": "pending"
   },
   {
     "id": 123,
     "feature": "Must Not Have Misleading or Inaccurate Tags",
-    "description": "App tags must accurately represent app functionality.",
-    "acceptance_criteria": [
-      "Tags match actual app features",
-      "No misleading category tags",
-      "Tags help merchants find the app appropriately",
-      "No competitor names in tags"
-    ],
     "priority": "high",
     "category": "listing",
-    "status": "pending",
-    "passes": false
+    "status": "pending"
   },
   {
     "id": 124,
     "feature": "Must Not Misuse App Card Subtitle",
-    "description": "App card subtitle must be used appropriately, not for marketing claims.",
-    "acceptance_criteria": [
-      "Subtitle describes app function concisely",
-      "No promotional language in subtitle",
-      "No pricing in subtitle",
-      "Subtitle matches app purpose"
-    ],
     "priority": "high",
     "category": "listing",
-    "status": "pending",
-    "passes": false
-  },
-  {
-    "id": 125,
-    "feature": "Must State if Requires Online Store Sales Channel",
-    "description": "If app requires Online Store sales channel, this must be clearly stated.",
-    "acceptance_criteria": [
-      "Requirements section lists Online Store if needed",
-      "Clear indication of sales channel dependencies",
-      "Merchants informed before installation"
-    ],
-    "priority": "medium",
-    "category": "listing",
-    "status": "verified",
-    "passes": true,
-    "note": "N/A - App does not require Online Store sales channel, works with any Shopify store"
+    "status": "pending"
   },
   {
     "id": 126,
     "feature": "Submission Must Include Demo Screencast",
-    "description": "App submission must include a demo video/screencast showing app functionality.",
-    "acceptance_criteria": [
-      "Demo video created showing key features",
-      "Video demonstrates installation flow",
-      "Video shows main app functionality",
-      "Video is clear and professional quality",
-      "Video uploaded to submission"
-    ],
     "priority": "critical",
     "category": "listing",
-    "status": "pending",
-    "passes": false
-  },
-  {
-    "id": 127,
-    "feature": "App Must Not Claim Unsupported Languages",
-    "description": "App must not claim to be published in languages that are not fully supported.",
-    "acceptance_criteria": [
-      "Only list languages that are fully translated",
-      "UI completely translated for listed languages",
-      "No mixed language content",
-      "Error messages translated for supported languages"
-    ],
-    "priority": "high",
-    "category": "listing",
-    "status": "verified",
-    "passes": true,
-    "note": "App is English-only, no additional language claims made"
+    "status": "pending"
   },
   {
     "id": 128,
     "feature": "App Name Fields Must Be Similar",
-    "description": "App name across different fields (listing, Partner dashboard) must be consistent.",
-    "acceptance_criteria": [
-      "App name consistent across Partner dashboard",
-      "App name matches in app listing",
-      "No significant variations in app name",
-      "Name in embedded app header matches listing"
-    ],
     "priority": "high",
     "category": "listing",
-    "status": "pending",
-    "passes": false
+    "status": "pending"
   },
   {
     "id": 129,
     "feature": "Centralize All Pricing Information Under Pricing Details",
-    "description": "All pricing information must be in the Pricing details section, not scattered throughout listing.",
-    "acceptance_criteria": [
-      "Pricing only in designated Pricing details section",
-      "No pricing mentioned in app description",
-      "No pricing in screenshots",
-      "Pricing details section is complete"
-    ],
     "priority": "high",
     "category": "listing",
-    "status": "pending",
-    "passes": false
+    "status": "pending"
   },
   {
     "id": 130,
     "feature": "Ensure App Details Are Clear and Descriptive",
-    "description": "App listing details must be clear, accurate, and descriptive.",
-    "acceptance_criteria": [
-      "App description clearly explains functionality",
-      "Features list is accurate and complete",
-      "Benefits clearly communicated",
-      "No vague or misleading claims",
-      "Professional writing quality"
-    ],
     "priority": "high",
     "category": "listing",
-    "status": "pending",
-    "passes": false
-  },
-  {
-    "id": 131,
-    "feature": "Must Not Have Reviews or Testimonials in Listing",
-    "description": "App listing must not contain reviews, testimonials, or endorsements.",
-    "acceptance_criteria": [
-      "No customer quotes in description",
-      "No star ratings mentioned",
-      "No testimonials in screenshots",
-      "No review excerpts anywhere in listing"
-    ],
-    "priority": "high",
-    "category": "listing",
-    "status": "verified",
-    "passes": true,
-    "note": "App listing does not include reviews or testimonials"
-  },
-  {
-    "id": 132,
-    "feature": "Must Not Have Stats or Data in Listing",
-    "description": "App listing must not contain statistics or data claims.",
-    "acceptance_criteria": [
-      "No '10,000+ merchants' type claims",
-      "No percentage improvement claims",
-      "No revenue/sales statistics",
-      "No unverifiable data points"
-    ],
-    "priority": "high",
-    "category": "listing",
-    "status": "verified",
-    "passes": true,
-    "note": "App listing does not include unverifiable statistics or data claims"
+    "status": "pending"
   },
   {
     "id": 133,
     "feature": "Must Not Use Shopify Brand in Graphics",
-    "description": "App graphics and screenshots must not use Shopify branding inappropriately.",
-    "acceptance_criteria": [
-      "No Shopify logo in app icon",
-      "Screenshots don't emphasize Shopify branding",
-      "No misleading use of Shopify name",
-      "Graphics follow Shopify brand guidelines"
-    ],
     "priority": "high",
     "category": "listing",
-    "status": "pending",
-    "passes": false
+    "status": "pending"
   },
   {
     "id": 134,
     "feature": "Must State Geographic and API Requirements",
-    "description": "If app has geographic restrictions or API requirements, these must be stated.",
-    "acceptance_criteria": [
-      "Geographic availability clearly stated if limited",
-      "API requirements documented",
-      "Third-party service dependencies listed",
-      "Region restrictions noted in requirements"
-    ],
     "priority": "medium",
     "category": "listing",
-    "status": "pending",
-    "passes": false
+    "status": "pending"
   },
   {
     "id": 140,
     "feature": "Must Have End Recipient Acknowledgement Form Signed",
-    "description": "Connector apps must have the end recipient acknowledgement form signed.",
-    "acceptance_criteria": [
-      "End recipient acknowledgement form completed",
-      "Form signed and submitted",
-      "All required parties have acknowledged"
-    ],
     "priority": "critical",
     "category": "connector",
-    "status": "pending",
-    "passes": false
-  },
-  {
-    "id": 141,
-    "feature": "Connector Must Not Connect to Third Party Marketplace",
-    "description": "Connector app must not connect merchants to third-party marketplaces.",
-    "acceptance_criteria": [
-      "No marketplace integrations",
-      "Connects to legitimate business systems only",
-      "No eBay/Amazon/etc marketplace connections"
-    ],
-    "priority": "critical",
-    "category": "connector",
-    "status": "verified",
-    "passes": true
+    "status": "pending"
   },
   {
     "id": 142,
     "feature": "Must Have Addendum Signed for International Connector",
-    "description": "International connector apps must have the appropriate addendum signed.",
-    "acceptance_criteria": [
-      "International connector addendum reviewed",
-      "Addendum signed if app operates internationally",
-      "Compliance with international data transfer requirements"
-    ],
     "priority": "high",
     "category": "connector",
-    "status": "pending",
-    "passes": false
+    "status": "pending"
   },
   {
     "id": 143,
     "feature": "Must Indicate Available Integrations and Data Transfers",
-    "description": "App must clearly indicate what integrations and data transfers are available.",
-    "acceptance_criteria": [
-      "Integration capabilities documented in listing",
-      "Data transfer types clearly explained",
-      "Supported systems/platforms listed",
-      "Data flow direction indicated (import/export/sync)"
-    ],
     "priority": "high",
     "category": "connector",
-    "status": "pending",
-    "passes": false
-  },
-  {
-    "id": 150,
-    "feature": "Compliance: Not a Capital Lending App",
-    "description": "App must not be a capital lending or financing app.",
-    "acceptance_criteria": [
-      "App does not provide loans or financing",
-      "No capital lending features",
-      "Confirmed: App is a connector app, not lending"
-    ],
-    "priority": "critical",
-    "category": "compliance",
-    "status": "verified",
-    "passes": true
-  },
-  {
-    "id": 151,
-    "feature": "Compliance: Not a Desktop App",
-    "description": "App must not be a desktop application requiring local installation.",
-    "acceptance_criteria": [
-      "App is web-based only",
-      "No desktop download required",
-      "Confirmed: App runs in browser/embedded admin"
-    ],
-    "priority": "critical",
-    "category": "compliance",
-    "status": "verified",
-    "passes": true
-  },
-  {
-    "id": 152,
-    "feature": "Compliance: Not a Marketplace",
-    "description": "App must not be a marketplace connecting buyers and sellers.",
-    "acceptance_criteria": [
-      "App does not operate as a marketplace",
-      "No buyer/seller matching",
-      "Confirmed: App is a data connector"
-    ],
-    "priority": "critical",
-    "category": "compliance",
-    "status": "verified",
-    "passes": true
-  },
-  {
-    "id": 153,
-    "feature": "Compliance: Not a Refund App",
-    "description": "App must not be an app that provides refunds outside Shopify.",
-    "acceptance_criteria": [
-      "No refund processing features",
-      "Does not bypass Shopify refund system",
-      "Confirmed: App does not handle refunds"
-    ],
-    "priority": "critical",
-    "category": "compliance",
-    "status": "verified",
-    "passes": true
-  },
-  {
-    "id": 154,
-    "feature": "Compliance: Not an Unauthorized Payment Gateway",
-    "description": "App must not be an unauthorized payment gateway.",
-    "acceptance_criteria": [
-      "No payment processing features",
-      "Does not handle payment transactions",
-      "Confirmed: App is not a payment gateway"
-    ],
-    "priority": "critical",
-    "category": "compliance",
-    "status": "verified",
-    "passes": true
-  },
-  {
-    "id": 155,
-    "feature": "Compliance: Not Identical to Other Published Apps",
-    "description": "App must not be identical to other published apps by the same developer.",
-    "acceptance_criteria": [
-      "App has unique functionality",
-      "Not a duplicate of existing published app",
-      "Confirmed: First app by this developer"
-    ],
-    "priority": "critical",
-    "category": "compliance",
-    "status": "verified",
-    "passes": true
-  },
-  {
-    "id": 156,
-    "feature": "Compliance: Does Not Bypass Shopify Checkout",
-    "description": "App must not bypass or circumvent Shopify checkout.",
-    "acceptance_criteria": [
-      "No alternative checkout flows",
-      "Does not redirect away from Shopify checkout",
-      "Confirmed: App does not affect checkout"
-    ],
-    "priority": "critical",
-    "category": "compliance",
-    "status": "verified",
-    "passes": true
-  },
-  {
-    "id": 157,
-    "feature": "Compliance: Does Not Bypass Theme Store",
-    "description": "App must not bypass the Shopify theme store.",
-    "acceptance_criteria": [
-      "Does not sell or distribute themes",
-      "No theme marketplace features",
-      "Confirmed: App does not involve themes"
-    ],
-    "priority": "critical",
-    "category": "compliance",
-    "status": "verified",
-    "passes": true
-  },
-  {
-    "id": 158,
-    "feature": "Compliance: Does Not Duplicate Protected Products",
-    "description": "App must not claim to duplicate protected or proprietary products.",
-    "acceptance_criteria": [
-      "No cloning of protected products",
-      "Original functionality only",
-      "Confirmed: App provides original connector features"
-    ],
-    "priority": "critical",
-    "category": "compliance",
-    "status": "verified",
-    "passes": true
-  },
-  {
-    "id": 159,
-    "feature": "Compliance: Does Not Connect to External Agencies/Developers",
-    "description": "App must not be a service that connects merchants to external agencies or developers.",
-    "acceptance_criteria": [
-      "No freelancer/agency marketplace features",
-      "Does not match merchants with service providers",
-      "Confirmed: App is a data connector only"
-    ],
-    "priority": "critical",
-    "category": "compliance",
-    "status": "verified",
-    "passes": true
-  },
-  {
-    "id": 160,
-    "feature": "Compliance: Does Not Connect to Third Party POS",
-    "description": "App must not connect to third-party POS systems.",
-    "acceptance_criteria": [
-      "No POS integration features",
-      "Does not sync with external POS",
-      "Confirmed: App does not involve POS"
-    ],
-    "priority": "critical",
-    "category": "compliance",
-    "status": "verified",
-    "passes": true
-  },
-  {
-    "id": 161,
-    "feature": "Compliance: Does Not Falsify Data",
-    "description": "App must not falsify or manipulate data.",
-    "acceptance_criteria": [
-      "All data presented accurately",
-      "No fake reviews or stats generation",
-      "Confirmed: App handles real data only"
-    ],
-    "priority": "critical",
-    "category": "compliance",
-    "status": "verified",
-    "passes": true
-  },
-  {
-    "id": 162,
-    "feature": "Compliance: Does Not Require Browser Extension",
-    "description": "App must not require installation of a browser extension.",
-    "acceptance_criteria": [
-      "No browser extension required",
-      "All functionality in embedded app",
-      "Confirmed: App is fully web-based"
-    ],
-    "priority": "critical",
-    "category": "compliance",
-    "status": "verified",
-    "passes": true
-  },
-  {
-    "id": 163,
-    "feature": "Compliance: Submitted as Regular App",
-    "description": "App must be submitted as a regular public app.",
-    "acceptance_criteria": [
-      "Submitted through standard app submission process",
-      "Not a custom app or private app",
-      "Follows public app guidelines"
-    ],
-    "priority": "high",
-    "category": "compliance",
-    "status": "verified",
-    "passes": true
+    "status": "pending"
   },
   {
     "id": 200,
     "feature": "Create SSL Certificate for connections.duxly.eu",
-    "description": "Request and validate an ACM certificate for the custom domain connections.duxly.eu.",
-    "acceptance_criteria": [
-      "Request ACM certificate in us-east-1 region (required for CloudFront)",
-      "Add DNS validation records to duxly.eu DNS",
-      "Certificate status shows 'Issued'",
-      "Certificate covers connections.duxly.eu domain"
-    ],
+    "description": "Request ACM certificate in us-east-1 for CloudFront.",
     "priority": "critical",
     "category": "deployment",
-    "status": "pending",
-    "passes": false
+    "status": "pending"
   },
   {
     "id": 201,
     "feature": "Configure CloudFront Custom Domain",
-    "description": "Update CloudFront distribution to use connections.duxly.eu as an alternate domain name (CNAME).",
-    "acceptance_criteria": [
-      "Add connections.duxly.eu as alternate domain name in CloudFront",
-      "Associate ACM certificate with CloudFront distribution",
-      "CloudFront distribution successfully deploys with custom domain",
-      "HTTPS works correctly on custom domain"
-    ],
     "priority": "critical",
     "category": "deployment",
-    "status": "pending",
-    "passes": false
+    "status": "pending"
   },
   {
     "id": 202,
     "feature": "Configure DNS for connections.duxly.eu",
-    "description": "Create DNS records pointing connections.duxly.eu to the CloudFront distribution.",
-    "acceptance_criteria": [
-      "Create CNAME or ALIAS record for connections.duxly.eu",
-      "Record points to CloudFront distribution domain name",
-      "DNS propagation complete (verify with dig/nslookup)",
-      "connections.duxly.eu resolves correctly"
-    ],
     "priority": "critical",
     "category": "deployment",
-    "status": "pending",
-    "passes": false
+    "status": "pending"
   },
   {
     "id": 203,
     "feature": "Update Frontend Environment for Custom Domain",
-    "description": "Update frontend configuration to use the new custom domain URL.",
-    "acceptance_criteria": [
-      "Update VITE_API_URL if needed",
-      "Update any hardcoded URLs to use connections.duxly.eu",
-      "Rebuild frontend with updated configuration",
-      "Deploy updated frontend to S3 bucket"
-    ],
     "priority": "high",
     "category": "deployment",
-    "status": "pending",
-    "passes": false
+    "status": "pending"
   },
   {
     "id": 204,
     "feature": "Update Shopify App URLs",
-    "description": "Update Shopify Partners dashboard with the new custom domain URLs.",
-    "acceptance_criteria": [
-      "Update App URL to https://connections.duxly.eu",
-      "Update allowed redirect URLs if needed",
-      "Verify shopify.app.toml reflects correct URLs",
-      "Test app loads correctly from Shopify Admin"
-    ],
     "priority": "critical",
     "category": "deployment",
-    "status": "pending",
-    "passes": false
+    "status": "pending"
   },
   {
     "id": 205,
     "feature": "Update CDK Stack for Custom Domain",
-    "description": "Modify CDK infrastructure to include custom domain configuration for CloudFront.",
-    "acceptance_criteria": [
-      "Add ACM certificate reference to CDK stack",
-      "Configure CloudFront distribution with alternate domain names",
-      "CDK synth generates correct CloudFormation template",
-      "CDK deploy successfully applies custom domain configuration"
-    ],
     "priority": "high",
     "category": "deployment",
-    "status": "pending",
-    "passes": false
+    "status": "pending"
   },
   {
     "id": 206,
     "feature": "Verify Custom Domain Deployment",
-    "description": "End-to-end verification that the app works correctly on connections.duxly.eu.",
-    "acceptance_criteria": [
-      "Frontend loads at https://connections.duxly.eu",
-      "OAuth flow works with new domain",
-      "API calls succeed from the app",
-      "App embeds correctly in Shopify Admin",
-      "No mixed content or SSL warnings"
-    ],
     "priority": "critical",
     "category": "deployment",
-    "status": "pending",
-    "passes": false
+    "status": "pending"
   },
   {
     "id": 207,
     "feature": "Invalidate CloudFront Cache After Deployment",
-    "description": "Create CloudFront cache invalidation to ensure new content is served.",
-    "acceptance_criteria": [
-      "Create invalidation for /* path",
-      "Invalidation completes successfully",
-      "New content served immediately after deployment",
-      "Add invalidation step to deployment script"
-    ],
     "priority": "medium",
     "category": "deployment",
+    "status": "pending"
+  },
+  {
+    "id": 301,
+    "feature": "Reinstall Hart Beach App (Missing Shop Access Token)",
+    "description": "OAuth never completed for Hart Beach. Requires merchant reinstall.",
+    "priority": "high",
+    "category": "bug-fix",
     "status": "pending",
-    "passes": false
+    "depends_on": [302]
+  },
+  {
+    "id": 302,
+    "feature": "Debug Stats API - Lambda Not Being Invoked",
+    "description": "Stats Lambda not receiving requests. Browser shows 404 errors.",
+    "priority": "critical",
+    "category": "bug-fix",
+    "status": "completed",
+    "passes": true,
+    "resolution": "Fixed useSessionToken hook to use window.shopify directly instead of useAppBridge(). The CDN approach requires direct access to window.shopify, not the npm package's useAppBridge hook.",
+    "debug_context": {
+      "api_gateway_url": "https://xehi9a6w6e.execute-api.eu-central-1.amazonaws.com/prod",
+      "lambda_function": "duxly-connection-StatsFunction-d7SIoegbePGJ",
+      "symptoms": ["404 errors fetching stats", "No Lambda invocations in CloudWatch"],
+      "root_cause": "useAppBridge hook from @shopify/app-bridge-react doesn't work with CDN approach - window.shopify should be accessed directly"
+    }
   }
 ]

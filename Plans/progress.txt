@@ -1,120 +1,85 @@
 ## Codebase Patterns
-- OAuth flow: Frontend at App.jsx redirects to /auth when shop param present, auth.js redirects to Shopify OAuth, callback.js exchanges code and stores token in Parameter Store
-- Parameter Store path: `/shopify/clients/{shop}/access-token` (SecureString), `/scopes`, `/installed-at`
-- Frontend uses Polaris UI components and App Bridge for Shopify admin embedding
-- Lambda functions in backend/functions/ handle all API endpoints
-- GDPR webhooks: Use gdpr.py (Python), deployed at `/webhooks/gdpr/...` - verifies HMAC before processing
-- Deployed CloudFormation stack name: `duxly-connection` (not ShopifyAppStack)
+- OAuth: App.jsx → /auth → Shopify OAuth → /callback → stores token → redirects to UI
+- Parameter Store: `/shopify/duxly-connection/shops/{appId}/{shop}/access-token`
+- Frontend: React + Polaris UI + App Bridge CDN (embedded in Shopify Admin)
+- Backend: Lambda functions in backend/functions/
+- Stack name: `duxly-connection` (not ShopifyAppStack)
+- **App Bridge CDN:** Use `window.shopify` directly, NOT `useAppBridge()` from npm package
+- **Session tokens:** useSessionToken hook waits for App Bridge CDN to initialize before calling `shopify.idToken()`
 
 ---
 
-## 2026-01-09 - Story 100 & 101
+## Completed Work (2026-01-09)
 
-- **What was implemented**: Verified OAuth authentication and redirect flows
-- **Files reviewed**:
-  - `frontend/src/App.jsx` - Auto-redirect to /auth on install
-  - `backend/functions/auth.js` - OAuth initiation with HMAC state
-  - `backend/functions/callback.js` - Token exchange and redirect to UI
-- **Learnings for future iterations:**
-  - App.jsx handles three scenarios: embedded (has host), post-install (has shop+installed), and direct access (redirects to auth)
-  - Callback redirects with `?shop=xxx&installed=true` params to signal successful auth
-  - HMAC verification implemented in callback.js for OAuth security
+### Functionality Verified (Stories 100-104, 107-108, 111-112, 114-115)
+- OAuth auto-authenticates on install, redirects to UI after callback
+- GDPR webhooks with HMAC verification (gdpr.py - Python)
+- TLS/SSL via AWS-managed certs (CloudFront + API Gateway)
+- Session token auth implemented (verifySessionToken.js, useSessionToken.js hook)
+- UI functional (Dashboard with stats, connection indicator)
+- Uses Shopify Admin API with proper versioning (2024-01)
+- No manual .myshopify.com URL entry required
+- Modals only triggered by user interaction
+
+### Compliance Verified (Stories 141, 150-163)
+- App is a data connector (not lending/marketplace/payment/refund)
+- Fully web-based, no desktop/browser extension
+- Does not bypass checkout, theme store, or falsify data
+- Original functionality, standard app submission
+
+### Bug Fixed (Story 300)
+- Added duxly-connection app credentials to Parameter Store
+- Migrated shop credentials to correct path structure
+
 ---
 
-## 2026-01-09 - Story 102, 103, 104
+## 2026-01-09 - Story 302 (Stats API Debug)
+Thread: N/A (current session)
 
-- **What was verified**: GDPR compliance webhooks, HMAC verification, TLS/SSL certificates
-- **Files recovered/reviewed**:
-  - `backend/functions/gdpr.py` - GDPR webhook handler (Python, was deployed but not in repo)
-  - Deployed endpoints verified at API Gateway
-- **Key findings**:
-  - GDPR webhooks deployed at `/webhooks/gdpr/customers_data_request`, `customers_redact`, `shop_redact`
-  - HMAC verification uses timing-safe comparison via `hmac.compare_digest()`
-  - shop/redact actually deletes shop data from Parameter Store
-  - CloudFront and API Gateway both use valid AWS-managed TLS certificates
-- **Learnings for future iterations:**
-  - Deployed stack is `duxly-connection`, not `ShopifyAppStack`
-  - GDPR handler is Python (`gdpr.py`), other handlers are JavaScript
-  - AWS CloudFront/API Gateway automatically provide valid TLS - no custom cert management needed
+### What was implemented
+- Fixed useSessionToken hook to work with App Bridge CDN approach
+- The root cause: code was using `useAppBridge()` from `@shopify/app-bridge-react` npm package
+- App Bridge CDN 4.x auto-initializes `window.shopify` which should be accessed directly
+- Added `waitForAppBridge()` helper to handle async initialization race conditions
+- Added `isReady` and `error` states for better error handling in consumers
+
+### Files changed
+- `frontend/src/hooks/useSessionToken.js`
+
+### Learnings for future iterations
+- **Critical:** When using App Bridge CDN (script tag in index.html), use `window.shopify` directly
+- **DO NOT** use `useAppBridge()` hook from npm package - it's for bundled approach only
+- The CDN auto-initialization may complete after React mounts, so always use async waiting
+- Stats API endpoint `/stats` returns 401 without auth (expected) - Lambda IS working
+- CloudWatch logs confirmed Lambda receives requests after fixing frontend
+
+### Verification
+- curl OPTIONS `/stats` → 200 (CORS preflight working)
+- curl GET `/stats` → 401 "Missing or invalid Authorization header" (expected without token)
+- CloudWatch logs show Lambda invocations
+- Frontend rebuilt and deployed to S3
+- CloudFront cache invalidated
+
 ---
 
-## 2026-01-09 - Story 108, 111, 112, 115
+## Active Issues
 
-- **What was verified**: UI functionality, Shopify API usage, shop domain handling, modal behavior
-- **Files reviewed**:
-  - `frontend/src/components/Dashboard.jsx` - Main UI with stats, connection indicator, quick actions
-  - `backend/functions/stats.js` - Shopify Admin API integration with versioning (2024-01) and rate limiting
-  - `frontend/src/App.jsx` - Shop parameter handling (no manual .myshopify.com input)
-- **Key findings**:
-  - Story 108: Dashboard shows meaningful content (connection status, store stats, action buttons)
-  - Story 111: Uses Shopify Admin API via `/admin/api/2024-01/` with stored access tokens
-  - Story 112: Shop domain obtained automatically via OAuth, no manual URL input fields
-  - Story 115: Only modal is DisconnectModal, triggered by explicit button click
-- **Gaps identified**:
-  - Story 106: Uses npm @shopify/app-bridge-react instead of CDN (may need clarification)
-  - Story 107: **CRITICAL** - No session token authentication for API requests
+### Story 106 - App Bridge CDN (Partially Resolved)
+- App Bridge IS loaded from CDN (index.html has script tag)
+- However, @shopify/app-bridge-react still in package.json dependencies
+- May need to remove npm dependency entirely for cleaner build
+
+### Story 301 - Hart Beach Reinstall
+- App credentials exist, but shop access token missing
+- Requires merchant to reinstall to trigger OAuth
+- No longer blocked by Story 302
+
 ---
 
-## 2026-01-09 - Story 150-163 (Compliance)
+## Remaining Work by Category
 
-- **What was verified**: All compliance stories confirming app is NOT a prohibited type
-- **Findings**:
-  - App is a Shopify connector (data connector) - not lending, marketplace, payment gateway, etc.
-  - Fully web-based (no desktop, no browser extension)
-  - Does not bypass Shopify checkout or theme store
-  - Does not falsify data or connect to external agencies/POS
-  - Original functionality (not duplicate of other published apps)
-- All 14 compliance stories verified as passing
----
-
-## 2026-01-09 - Story 141 & Progress Summary
-
-- **Verified Story 141**: App does not connect to third-party marketplaces (eBay, Amazon, etc.)
-
-### Overall Progress Summary
-**Verified as PASSING (24 stories):**
-- 100-104: OAuth, GDPR webhooks, HMAC, TLS
-- 108, 111, 112, 115: UI, Shopify API, no manual URL input, no auto-modals
-- 141, 150-163: Compliance/connector type confirmations
-
-**Remaining (33 stories) - categorized:**
-- **Code changes needed:** 106 (CDN App Bridge), 107 (Session Tokens - CRITICAL)
-- **Manual/browser testing:** 109, 110, 113, 114 (UI testing, reinstall flow)
-- **Partner Dashboard:** 105, 120-134 (listing requirements)
-- **Legal/documentation:** 140, 142, 143 (connector forms)
-- **Custom domain deployment:** 200-207 (connections.duxly.eu setup)
-
-### Critical Gap: Story 107 (Session Tokens)
-The app does NOT use session token authentication for API requests. This is a security vulnerability where API endpoints accept any shop parameter without verification. Needs implementation of:
-1. Frontend: Use `getSessionToken()` from App Bridge
-2. Backend: Validate JWT tokens before processing requests
----
-
-## 2026-01-09 - Story 107 (Session Token Authentication)
-
-- **What was implemented**: Full session token authentication for all API requests
-- **Backend files created/modified**:
-  - `backend/functions/verifySessionToken.js` (NEW) - JWT verification utility with multi-app support
-    - Loads app credentials from Parameter Store dynamically based on JWT `aud` claim
-    - Verifies HMAC-SHA256 signature with timing-safe comparison
-    - Validates expiration, not-before, and audience claims
-    - Exports: `requireSessionToken`, `getShopFromToken`, `getAppFromToken`
-  - `backend/functions/stats.js` - Added session token requirement, shop/appId now from token
-  - `backend/functions/disconnect.js` - Added session token requirement, removed shop from body
-- **Frontend files created/modified**:
-  - `frontend/src/hooks/useSessionToken.js` (NEW) - React hook for authenticated API calls
-    - Uses App Bridge `getSessionToken()` to obtain fresh tokens
-    - Exports `authenticatedFetch` that adds Authorization header
-  - `frontend/src/components/StatsGrid.jsx` - Uses `authenticatedFetch` instead of `fetch`
-  - `frontend/src/components/DisconnectModal.jsx` - Uses `authenticatedFetch` instead of `fetch`
-- **Acceptance criteria met**:
-  - ✅ App Bridge getSessionToken() used to obtain session tokens
-  - ✅ Session token sent in Authorization header for API requests
-  - ✅ Backend validates session token signature and claims
-  - ✅ No cookie-based authentication for embedded app
-  - ✅ Token refresh handled (getSessionToken() returns fresh token each call)
-- **Learnings for future iterations:**
-  - Session tokens are short-lived (60 seconds), so must get fresh token for each API call
-  - Multi-app architecture requires dynamic credential lookup based on JWT audience claim
-  - Backend stores `event._appId` and `event._shop` after verification for downstream use
----
+**Testing:** 109, 110, 113 (UI errors, reinstall flow)
+**Partner Dashboard:** 105, 120-134 (listing requirements, icon, pricing)
+**Legal/Docs:** 140, 142, 143 (connector forms)
+**Custom Domain:** 200-207 (connections.duxly.eu setup)
+**Cleanup:** 106 (remove @shopify/app-bridge-react from package.json?)
