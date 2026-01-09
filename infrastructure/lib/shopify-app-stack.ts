@@ -7,8 +7,14 @@ import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import { Construct } from 'constructs';
 import * as path from 'path';
+
+// Custom domain configuration for connections.duxly.eu
+const CUSTOM_DOMAIN = 'connections.duxly.eu';
+// ACM certificate ARN in us-east-1 (required for CloudFront)
+const ACM_CERTIFICATE_ARN = 'arn:aws:acm:us-east-1:287364126144:certificate/da3e1ab6-27b7-4c44-abca-5fe3f805fd5c';
 
 export class ShopifyAppStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -32,7 +38,12 @@ export class ShopifyAppStack extends cdk.Stack {
       autoDeleteObjects: true,
     });
 
-    // CloudFront distribution for the frontend
+    // Import ACM certificate for custom domain (must be in us-east-1 for CloudFront)
+    const certificate = acm.Certificate.fromCertificateArn(
+      this, 'Certificate', ACM_CERTIFICATE_ARN
+    );
+
+    // CloudFront distribution for the frontend with custom domain
     const distribution = new cloudfront.Distribution(this, 'FrontendDistribution', {
       defaultBehavior: {
         origin: new origins.S3Origin(frontendBucket),
@@ -46,6 +57,9 @@ export class ShopifyAppStack extends cdk.Stack {
           responsePagePath: '/index.html',
         },
       ],
+      domainNames: [CUSTOM_DOMAIN],
+      certificate: certificate,
+      minimumProtocolVersion: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
     });
 
     // DynamoDB table for caching store statistics
@@ -74,7 +88,7 @@ export class ShopifyAppStack extends cdk.Stack {
       handler: 'callback.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../../backend/functions')),
       environment: {
-        FRONTEND_URL: `https://${distribution.distributionDomainName}`,
+        FRONTEND_URL: `https://${CUSTOM_DOMAIN}`,
         PARAMETER_STORE_PREFIX: parameterStorePrefix,
       },
       timeout: cdk.Duration.seconds(30),
@@ -185,8 +199,8 @@ export class ShopifyAppStack extends cdk.Stack {
     });
 
     new cdk.CfnOutput(this, 'FrontendUrl', {
-      value: `https://${distribution.distributionDomainName}`,
-      description: 'CloudFront Distribution URL',
+      value: `https://${CUSTOM_DOMAIN}`,
+      description: 'Custom Domain URL',
     });
 
     new cdk.CfnOutput(this, 'FrontendBucketName', {

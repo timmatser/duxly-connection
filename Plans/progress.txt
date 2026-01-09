@@ -6,6 +6,8 @@
 - Stack name: `duxly-connection` (not ShopifyAppStack)
 - **App Bridge CDN:** Use `window.shopify` directly, NOT `useAppBridge()` from npm package
 - **Session tokens:** useSessionToken hook waits for App Bridge CDN to initialize before calling `shopify.idToken()`
+- **Custom Domain:** connections.duxly.eu → CloudFront → S3 (ACM cert in us-east-1)
+- **CloudFront Distribution ID:** EUQ32P5FIM9SW
 
 ---
 
@@ -127,9 +129,47 @@ Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
 
 ---
 
+## 2026-01-09 - Stories 200-207 (Custom Domain Setup)
+Thread: N/A (current session)
+
+### What was implemented
+- Created ACM certificate for connections.duxly.eu in us-east-1
+- Added DNS validation record to Route53 (duxly.eu zone)
+- Configured CloudFront distribution with custom domain alias
+- Added CNAME record pointing connections.duxly.eu to CloudFront
+- Updated CDK stack with custom domain configuration
+- Updated Lambda callback function FRONTEND_URL env var
+- Updated all shopify.app.*.toml files with new domain
+- Updated admin-ui config files with new frontend URL
+
+### Files changed
+- `infrastructure/lib/shopify-app-stack.ts` - Added ACM import and custom domain config
+- `shopify.app.hart-beach.toml` - Updated application_url
+- `admin-ui/config.js` - Updated frontendUrl
+- `admin-ui/app.js` - Updated APP_CONFIG.frontendUrl
+
+### AWS Resources Created/Updated
+- ACM Certificate: arn:aws:acm:us-east-1:287364126144:certificate/da3e1ab6-27b7-4c44-abca-5fe3f805fd5c
+- Route53 Records: _1219a09f61df976c333041a6ef39fd93.connections.duxly.eu (validation), connections.duxly.eu (CNAME)
+- CloudFront Distribution EUQ32P5FIM9SW: Added connections.duxly.eu alias + certificate
+- Lambda duxly-connection-CallbackFunction-VAbLbFJmSWRZ: FRONTEND_URL updated
+
+### Verification
+- curl https://connections.duxly.eu → 200 OK
+- SSL certificate valid, expires Feb 7 2027
+- DNS resolves correctly: connections.duxly.eu → d3hd7mj8z35qoh.cloudfront.net
+- CloudFront status: Deployed
+
+### Learnings for future iterations
+- ACM certificates for CloudFront MUST be in us-east-1, regardless of stack region
+- Use `acm.Certificate.fromCertificateArn()` to import existing certs in CDK
+- CloudFront distribution updates take ~5 minutes to deploy
+- Route53 CNAME changes propagate quickly but certificate validation may take a minute
+
+---
+
 ## Remaining Work by Category
 
 **Testing:** 110, 113 (partial UI errors, reinstall flow)
 **Partner Dashboard:** 105, 120-134 (listing requirements, icon, pricing)
 **Legal/Docs:** 140, 142, 143 (connector forms)
-**Custom Domain:** 200-207 (connections.duxly.eu setup)

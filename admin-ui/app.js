@@ -26,7 +26,7 @@ const DEFAULT_SCOPES = 'read_products,write_products,read_orders,read_customers'
 
 // Default app configuration
 const APP_CONFIG = {
-    frontendUrl: 'https://d3hd7mj8z35qoh.cloudfront.net',
+    frontendUrl: 'https://connections.duxly.eu',
     apiUrl: 'https://xehi9a6w6e.execute-api.eu-central-1.amazonaws.com/prod',
     webhooksApiVersion: '2024-01'
 };

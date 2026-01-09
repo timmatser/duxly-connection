@@ -24,7 +24,7 @@ window.DUXLY_CONFIG = {
         name: 'Duxly Connection (Public)',
         clientId: '79f672bb13bc6ab7fa86755927ff9a6f',
         apiUrl: 'https://xehi9a6w6e.execute-api.eu-central-1.amazonaws.com/prod',
-        frontendUrl: 'https://d3hd7mj8z35qoh.cloudfront.net',
+        frontendUrl: 'https://connections.duxly.eu',
         status: 'review' // 'active', 'review', 'draft'
     }
 };

@@ -8,7 +8,7 @@ client_id = "62d1114feb88f342f9be3d50be3affe0"
 handle = "duxly-connection-hart-beach"
 
 # App URLs
-application_url = "https://d3hd7mj8z35qoh.cloudfront.net"
+application_url = "https://connections.duxly.eu"
 embedded = true
 
 # Access Scopes
