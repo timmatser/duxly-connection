@@ -3,9 +3,9 @@ import { AppProvider } from '@shopify/polaris';
 import Dashboard from './components/Dashboard';
 import ConnectScreen from './components/ConnectScreen';
 
-// App identifier for multi-app support
-// Each frontend deployment has its own VITE_APP_ID baked in at build time
-const APP_ID = import.meta.env.VITE_APP_ID || 'duxly-connection';
+// Get the Shopify API key (client_id) for this app
+// This is set at build time and must match the app registration
+const SHOPIFY_API_KEY = import.meta.env.VITE_SHOPIFY_API_KEY;
 
 function App() {
   const [shop, setShop] = useState(null);
@@ -39,15 +39,15 @@ function App() {
       // If already installed (coming back from OAuth callback), redirect to embedded admin
       if (installed === 'true') {
         // Redirect to Shopify admin to load app in embedded context
-        const adminUrl = `https://${shopParam}/admin/apps/${import.meta.env.VITE_SHOPIFY_API_KEY}`;
+        const adminUrl = `https://${shopParam}/admin/apps/${SHOPIFY_API_KEY}`;
         window.location.href = adminUrl;
         return;
       }
 
       // Otherwise, redirect to auth to start OAuth
-      // Pass app parameter for multi-app credential loading
+      // Pass client_id so backend can look up the correct app credentials
       const apiUrl = import.meta.env.VITE_API_URL || '';
-      window.location.href = `${apiUrl}/auth?shop=${encodeURIComponent(shopParam)}&app=${encodeURIComponent(APP_ID)}`;
+      window.location.href = `${apiUrl}/auth?shop=${encodeURIComponent(shopParam)}&client_id=${encodeURIComponent(SHOPIFY_API_KEY)}`;
     }
   }, []);
 
