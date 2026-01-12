@@ -76,9 +76,9 @@ npm install              # Install Lambda dependencies
 
 ### Viewing Logs
 ```bash
-aws logs tail /aws/lambda/ShopifyAppStack-AuthFunction --follow
-aws logs tail /aws/lambda/ShopifyAppStack-CallbackFunction --follow
-aws logs tail /aws/lambda/ShopifyAppStack-StatsFunction --follow
+aws logs tail /aws/lambda/duxly-connection-AuthFunctionA1CD5E0F-* --follow
+aws logs tail /aws/lambda/duxly-connection-CallbackFunctionA4FB3452-* --follow
+aws logs tail /aws/lambda/duxly-connection-StatsFunctionE4A6FC3A-* --follow
 ```
 
 ## Environment Variables
@@ -130,12 +130,35 @@ VITE_APP_ID=duxly-connection      # App identifier for multi-app support
 
 Default: `eu-central-1`
 
+## Deployed Resources
+
+Current deployment (managed by CDK stack `duxly-connection`):
+
+| Resource | Value |
+|----------|-------|
+| **API Gateway URL** | `https://wsrvuo1fz2.execute-api.eu-central-1.amazonaws.com/prod/` |
+| **S3 Bucket** | `duxly-connection-frontendbucketefe2e19c-xekg8hoi7rux` |
+| **CloudFront Distribution ID** | `EV9FR86RWSUJO` |
+| **CloudFront Domain** | `d7jlhqhgvrgy8.cloudfront.net` |
+| **DynamoDB Table** | `shopify-stats-cache` |
+
+**Note:** `connections.duxly.eu` is a separate Admin UI for internal management, not related to the Shopify embedded app.
+
+### GDPR Webhook URLs
+```
+customers/data_request: https://wsrvuo1fz2.execute-api.eu-central-1.amazonaws.com/prod/webhooks/gdpr/customers_data_request
+customers/redact: https://wsrvuo1fz2.execute-api.eu-central-1.amazonaws.com/prod/webhooks/gdpr/customers_redact
+shop/redact: https://wsrvuo1fz2.execute-api.eu-central-1.amazonaws.com/prod/webhooks/gdpr/shop_redact
+```
+
 ## Shopify App Configuration
 
-Required settings in Shopify Partners Dashboard:
-- **App URL**: CloudFront distribution URL
-- **Allowed redirect URL**: `{API_GATEWAY_URL}/prod/callback`
+Required settings in Shopify Partners Dashboard (managed via TOML files):
+- **App URL**: `https://d7jlhqhgvrgy8.cloudfront.net` (shared CloudFront distribution)
+- **Allowed redirect URL**: `https://wsrvuo1fz2.execute-api.eu-central-1.amazonaws.com/prod/callback`
 - **Embedded app**: Enabled
+
+Deploy changes using: `shopify app deploy --config shopify.app.{appId}.toml --force`
 
 ## Multi-App Architecture (Temporary)
 
@@ -148,7 +171,7 @@ Shopify custom distribution apps can only be installed on **one shop**. To test 
 Each registration:
 - Has unique `client_id` and `client_secret`
 - Points to the **same backend** Lambda functions
-- Has its **own frontend deployment** with `VITE_APP_ID` baked in
+- Points to the **same frontend** CloudFront distribution
 
 ### How It Works
 
@@ -158,10 +181,10 @@ Each registration:
 - Session token verification looks up the app by JWT `aud` claim (client_id)
 - Cache keys include app ID to keep data separate: `{appId}:{shop}`
 
-**Frontend (per-app deployment):**
-- Each app registration has its own S3 bucket + CloudFront distribution
-- `VITE_APP_ID` and `VITE_SHOPIFY_API_KEY` are baked in at build time
-- Frontend passes `app` parameter to `/auth` for OAuth flow
+**Frontend (shared):**
+- All app registrations share the same S3 bucket + CloudFront distribution (`d7jlhqhgvrgy8.cloudfront.net`)
+- Frontend reads `SHOPIFY_API_KEY` from Shopify App Bridge context (no build-time baking needed)
+- App ID is derived from the client_id at runtime
 
 ### Session Token Authentication
 
@@ -182,20 +205,14 @@ For authenticated endpoints (stats, disconnect):
    aws ssm put-parameter --name "/shopify/duxly-connection/apps/{appId}/name" --value "App Name" --type String
    aws ssm put-parameter --name "/shopify/duxly-connection/apps/{appId}/status" --value "active" --type String
    ```
-3. **Create frontend `.env.{appId}`:**
-   ```
-   VITE_SHOPIFY_API_KEY={client_id}
-   VITE_API_URL=https://xehi9a6w6e.execute-api.eu-central-1.amazonaws.com/prod
-   VITE_APP_ID={appId}
-   ```
-4. **Build and deploy frontend:**
+3. **Create TOML file** `shopify.app.{appId}.toml` with:
+   - `application_url = "https://d7jlhqhgvrgy8.cloudfront.net"`
+   - `redirect_urls` pointing to the shared API Gateway callback
+   - GDPR webhook URLs
+4. **Deploy with Shopify CLI:**
    ```bash
-   cd frontend
-   cp .env.{appId} .env
-   npm run build
-   aws s3 sync dist s3://{app-specific-bucket} --delete
+   shopify app deploy --config shopify.app.{appId}.toml --force
    ```
-5. **Configure Shopify app URLs** in Partners Dashboard to point to the new CloudFront distribution
 
 ### Future: Public App
 

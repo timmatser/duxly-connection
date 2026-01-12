@@ -1,0 +1,223 @@
+[
+  {
+    "id": 100,
+    "feature": "Immediately Authenticates After Install",
+    "category": "functionality",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 101,
+    "feature": "Immediately Redirects to App UI After Authentication",
+    "category": "functionality",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 102,
+    "feature": "Provides Mandatory Compliance Webhooks",
+    "category": "functionality",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 103,
+    "feature": "Verifies Webhooks with HMAC Signatures",
+    "category": "functionality",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 104,
+    "feature": "Uses a Valid TLS/SSL Certificate",
+    "category": "functionality",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 107,
+    "feature": "Using Session Tokens for User Authentication",
+    "category": "functionality",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 108,
+    "feature": "Must Have UI Merchants Can Interact With",
+    "category": "functionality",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 111,
+    "feature": "Must Use Shopify APIs After Install",
+    "category": "functionality",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 112,
+    "feature": "Must Not Request .myshopify.com URLs from Merchants",
+    "category": "functionality",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 114,
+    "feature": "Data Synchronization",
+    "category": "functionality",
+    "status": "verified",
+    "note": "N/A - App fetches stats on-demand",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 115,
+    "feature": "Apps Must Not Launch Max Modal Without User Interaction",
+    "category": "embedded",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 125,
+    "feature": "Must State if Requires Online Store Sales Channel",
+    "category": "listing",
+    "status": "verified",
+    "note": "N/A - Not required",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 127,
+    "feature": "App Must Not Claim Unsupported Languages",
+    "category": "listing",
+    "status": "verified",
+    "note": "English-only",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 131,
+    "feature": "Must Not Have Reviews or Testimonials in Listing",
+    "category": "listing",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 132,
+    "feature": "Must Not Have Stats or Data in Listing",
+    "category": "listing",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 141,
+    "feature": "Connector Must Not Connect to Third Party Marketplace",
+    "category": "connector",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 150,
+    "feature": "Compliance: Not a Capital Lending App",
+    "category": "compliance",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 151,
+    "feature": "Compliance: Not a Desktop App",
+    "category": "compliance",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 152,
+    "feature": "Compliance: Not a Marketplace",
+    "category": "compliance",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 153,
+    "feature": "Compliance: Not a Refund App",
+    "category": "compliance",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 154,
+    "feature": "Compliance: Not an Unauthorized Payment Gateway",
+    "category": "compliance",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 155,
+    "feature": "Compliance: Not Identical to Other Published Apps",
+    "category": "compliance",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 156,
+    "feature": "Compliance: Does Not Bypass Shopify Checkout",
+    "category": "compliance",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 157,
+    "feature": "Compliance: Does Not Bypass Theme Store",
+    "category": "compliance",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 158,
+    "feature": "Compliance: Does Not Duplicate Protected Products",
+    "category": "compliance",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 159,
+    "feature": "Compliance: Does Not Connect to External Agencies/Developers",
+    "category": "compliance",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 160,
+    "feature": "Compliance: Does Not Connect to Third Party POS",
+    "category": "compliance",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 161,
+    "feature": "Compliance: Does Not Falsify Data",
+    "category": "compliance",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 162,
+    "feature": "Compliance: Does Not Require Browser Extension",
+    "category": "compliance",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 163,
+    "feature": "Compliance: Submitted as Regular App",
+    "category": "compliance",
+    "status": "verified",
+    "archived_at": "2026-01-09"
+  },
+  {
+    "id": 300,
+    "feature": "Register Missing App Credentials in Parameter Store",
+    "category": "bug-fix",
+    "status": "completed",
+    "completed_at": "2026-01-09",
+    "archived_at": "2026-01-09"
+  }
+]

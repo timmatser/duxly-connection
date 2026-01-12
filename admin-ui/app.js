@@ -1,22 +1,12 @@
 // Duxly Connection Admin App
+// Uses shared DuxlyAuth for cross-subdomain authentication
 
 const CONFIG = window.DUXLY_CONFIG;
 
 // State
-let cognito = null;
 let ssm = null;
 let currentUser = null;
-let challengeSession = null;
 let registeredApps = [];
-
-// Storage keys
-const STORAGE = {
-    ACCESS_TOKEN: 'duxly_conn_access_token',
-    ID_TOKEN: 'duxly_conn_id_token',
-    REFRESH_TOKEN: 'duxly_conn_refresh_token',
-    TOKEN_EXPIRY: 'duxly_conn_token_expiry',
-    USER_EMAIL: 'duxly_conn_user_email'
-};
 
 // Apps prefix in Parameter Store
 const APPS_PREFIX = '/shopify/duxly-connection/apps';
@@ -34,9 +24,9 @@ const APP_CONFIG = {
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     AWS.config.region = CONFIG.region;
-    cognito = new AWS.CognitoIdentityServiceProvider();
 
-    if (isAuthenticated()) {
+    // Check if already authenticated via shared DuxlyAuth
+    if (DuxlyAuth.isAuthenticated()) {
         showDashboard();
     }
 
@@ -44,36 +34,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('add-app-form').addEventListener('submit', handleAddApp);
 });
 
-// ==================== AUTH HELPERS ====================
+// ==================== AUTH HELPERS (using shared DuxlyAuth) ====================
 
 function isAuthenticated() {
-    const expiry = localStorage.getItem(STORAGE.TOKEN_EXPIRY);
-    const idToken = localStorage.getItem(STORAGE.ID_TOKEN);
-    if (!expiry || !idToken) return false;
-    return Date.now() < (parseInt(expiry, 10) - 5 * 60 * 1000);
-}
-
-function storeTokens(authResult, email) {
-    localStorage.setItem(STORAGE.ACCESS_TOKEN, authResult.AccessToken);
-    localStorage.setItem(STORAGE.ID_TOKEN, authResult.IdToken);
-    if (authResult.RefreshToken) {
-        localStorage.setItem(STORAGE.REFRESH_TOKEN, authResult.RefreshToken);
-    }
-    localStorage.setItem(STORAGE.USER_EMAIL, email);
-    const expiry = Date.now() + (authResult.ExpiresIn * 1000);
-    localStorage.setItem(STORAGE.TOKEN_EXPIRY, expiry.toString());
-}
-
-function clearTokens() {
-    Object.values(STORAGE).forEach(key => localStorage.removeItem(key));
-}
-
-function getIdToken() {
-    return localStorage.getItem(STORAGE.ID_TOKEN);
+    return DuxlyAuth.isAuthenticated();
 }
 
 function getUserEmail() {
-    return localStorage.getItem(STORAGE.USER_EMAIL);
+    return DuxlyAuth.getUserEmail();
 }
 
 function isAdmin() {
@@ -82,27 +50,8 @@ function isAdmin() {
 }
 
 async function setupAWSCredentials() {
-    const idToken = getIdToken();
-    if (!idToken) throw new Error('No ID token available');
-
-    const providerName = `cognito-idp.${CONFIG.region}.amazonaws.com/${CONFIG.userPoolId}`;
-
-    AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-        IdentityPoolId: CONFIG.identityPoolId,
-        Logins: { [providerName]: idToken }
-    });
-
-    return new Promise((resolve, reject) => {
-        AWS.config.credentials.refresh((error) => {
-            if (error) {
-                console.error('Error refreshing credentials:', error);
-                reject(error);
-            } else {
-                ssm = new AWS.SSM();
-                resolve();
-            }
-        });
-    });
+    await DuxlyAuth.setupAWSCredentials();
+    ssm = new AWS.SSM();
 }
 
 // ==================== VIEW MANAGEMENT ====================
@@ -142,7 +91,10 @@ function hideError(elementId) {
     if (el) el.classList.add('hidden');
 }
 
-// ==================== LOGIN ====================
+// ==================== LOGIN (using shared DuxlyAuth) ====================
+
+// Track if we're in new password flow
+let awaitingNewPassword = false;
 
 async function handleLogin(e) {
     e.preventDefault();
@@ -158,72 +110,45 @@ async function handleLogin(e) {
     btn.innerHTML = 'Signing in...';
 
     try {
-        if (challengeSession && newPassword) {
+        if (awaitingNewPassword && newPassword) {
+            // Complete new password challenge
             if (newPassword !== confirmPassword) {
                 throw new Error('Passwords do not match');
             }
-            const result = await completeNewPassword(email, newPassword, challengeSession);
-            storeTokens(result.AuthenticationResult, email);
-            challengeSession = null;
+            await DuxlyAuth.setNewPassword(email, newPassword);
+            awaitingNewPassword = false;
+            document.getElementById('new-password-section').classList.add('hidden');
             showDashboard();
         } else {
-            const result = await authenticate(email, password);
+            // Initial login
+            const result = await DuxlyAuth.login(email, password, {
+                onNewPasswordRequired: () => {
+                    awaitingNewPassword = true;
+                    document.getElementById('new-password-section').classList.remove('hidden');
+                    btn.innerHTML = 'Set New Password';
+                    btn.disabled = false;
+                }
+            });
 
-            if (result.ChallengeName === 'NEW_PASSWORD_REQUIRED') {
-                challengeSession = result.Session;
-                document.getElementById('new-password-section').classList.remove('hidden');
-                btn.innerHTML = 'Set New Password';
-                btn.disabled = false;
-                return;
+            if (result.requiresNewPassword) {
+                return; // Wait for user to set new password
             }
 
-            storeTokens(result.AuthenticationResult, email);
             showDashboard();
         }
     } catch (error) {
         console.error('Login error:', error);
-        let message = 'Authentication failed.';
-        if (error.code === 'NotAuthorizedException') message = 'Incorrect email or password.';
-        else if (error.code === 'UserNotFoundException') message = 'User not found.';
-        else if (error.message) message = error.message;
-
-        showError('login-error', message);
+        showError('login-error', error.message || 'Authentication failed.');
         btn.innerHTML = 'Sign In';
         btn.disabled = false;
     }
 }
 
-function authenticate(email, password) {
-    return new Promise((resolve, reject) => {
-        cognito.initiateAuth({
-            AuthFlow: 'USER_PASSWORD_AUTH',
-            ClientId: CONFIG.clientId,
-            AuthParameters: { USERNAME: email, PASSWORD: password }
-        }, (err, data) => {
-            if (err) reject(err);
-            else resolve(data);
-        });
-    });
-}
-
-function completeNewPassword(email, newPassword, session) {
-    return new Promise((resolve, reject) => {
-        cognito.respondToAuthChallenge({
-            ChallengeName: 'NEW_PASSWORD_REQUIRED',
-            ClientId: CONFIG.clientId,
-            Session: session,
-            ChallengeResponses: { USERNAME: email, NEW_PASSWORD: newPassword }
-        }, (err, data) => {
-            if (err) reject(err);
-            else resolve(data);
-        });
-    });
-}
-
 function logout() {
-    clearTokens();
-    challengeSession = null;
+    DuxlyAuth.logout();
+    awaitingNewPassword = false;
     document.getElementById('login-form').reset();
+    document.getElementById('new-password-section').classList.add('hidden');
     showLogin();
 }
 

@@ -1,0 +1,120 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Duxly Connection Admin UI - CloudFront Distribution with Custom Domain'
+
+Parameters:
+  DomainName:
+    Type: String
+    Default: connection-admin.duxly.eu
+    Description: Domain name for the admin UI
+
+  HostedZoneId:
+    Type: String
+    Default: Z0251981225TW3VIHCICI
+    Description: Route53 hosted zone ID for duxly.eu
+
+  CertificateArn:
+    Type: String
+    Default: arn:aws:acm:us-east-1:287364126144:certificate/6cf0a336-a603-41e0-94c1-78314ddfbf27
+    Description: ARN of the ACM certificate in us-east-1 for CloudFront
+
+  ExistingBucketName:
+    Type: String
+    Default: duxly-internal
+    Description: Existing S3 bucket name for UI hosting
+
+  UIPrefix:
+    Type: String
+    Default: duxly-connection-admin
+    Description: S3 key prefix for UI files
+
+Resources:
+  # Origin Access Control for CloudFront
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub '${DomainName}-oac'
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # CloudFront Distribution
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        HttpVersion: http2and3
+        IPV6Enabled: true
+        PriceClass: PriceClass_100
+
+        Origins:
+          - Id: S3Origin
+            DomainName: !Sub '${ExistingBucketName}.s3.eu-central-1.amazonaws.com'
+            OriginPath: !Sub '/${UIPrefix}'
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+            OriginAccessControlId: !Ref CloudFrontOAC
+
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+          Compress: true
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6  # Managed-CachingOptimized
+
+        # Handle SPA routing - return index.html for 404s
+        CustomErrorResponses:
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 0
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 0
+
+        Aliases:
+          - !Ref DomainName
+
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CertificateArn
+          MinimumProtocolVersion: TLSv1.2_2021
+          SslSupportMethod: sni-only
+
+      Tags:
+        - Key: Project
+          Value: duxly-connection-admin
+
+  # Route53 Record
+  DNSRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref DomainName
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt CloudFrontDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2  # CloudFront hosted zone ID (global constant)
+
+Outputs:
+  CloudFrontDistributionId:
+    Description: CloudFront Distribution ID
+    Value: !Ref CloudFrontDistribution
+    Export:
+      Name: !Sub '${AWS::StackName}-DistributionId'
+
+  CloudFrontDomainName:
+    Description: CloudFront Domain Name
+    Value: !GetAtt CloudFrontDistribution.DomainName
+
+  WebsiteURL:
+    Description: Website URL
+    Value: !Sub 'https://${DomainName}'

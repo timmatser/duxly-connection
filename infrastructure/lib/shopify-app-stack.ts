@@ -3,7 +3,6 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as s3 from 'aws-cdk-lib/aws-s3';
-import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
@@ -21,8 +20,9 @@ export class ShopifyAppStack extends cdk.Stack {
     super(scope, id, props);
 
     // Environment variables from context or defaults
-    // Note: SHOPIFY_API_KEY/SECRET removed - now loaded dynamically from Parameter Store per app
     const parameterStorePrefix = process.env.PARAMETER_STORE_PREFIX || '/shopify/duxly-connection';
+
+    // ==================== S3 & CloudFront ====================
 
     // S3 bucket for hosting the frontend
     const frontendBucket = new s3.Bucket(this, 'FrontendBucket', {
@@ -46,7 +46,7 @@ export class ShopifyAppStack extends cdk.Stack {
     // CloudFront distribution for the frontend with custom domain
     const distribution = new cloudfront.Distribution(this, 'FrontendDistribution', {
       defaultBehavior: {
-        origin: new origins.S3Origin(frontendBucket),
+        origin: origins.S3BucketOrigin.withOriginAccessControl(frontendBucket),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
       },
       defaultRootObject: 'index.html',
@@ -62,6 +62,8 @@ export class ShopifyAppStack extends cdk.Stack {
       minimumProtocolVersion: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
     });
 
+    // ==================== DynamoDB ====================
+
     // DynamoDB table for caching store statistics
     const statsCacheTable = new dynamodb.Table(this, 'StatsCacheTable', {
       tableName: 'shopify-stats-cache',
@@ -71,73 +73,94 @@ export class ShopifyAppStack extends cdk.Stack {
       timeToLiveAttribute: 'ttl',
     });
 
+    // ==================== Lambda Functions ====================
+
+    // Shared Lambda code asset
+    const lambdaCode = lambda.Code.fromAsset(path.join(__dirname, '../../backend/functions'));
+
     // Lambda function for OAuth installation
     const authFunction = new lambda.Function(this, 'AuthFunction', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'auth.handler',
-      code: lambda.Code.fromAsset(path.join(__dirname, '../../backend/functions')),
+      code: lambdaCode,
       environment: {
         PARAMETER_STORE_PREFIX: parameterStorePrefix,
       },
       timeout: cdk.Duration.seconds(30),
+      memorySize: 256,
     });
 
     // Lambda function for OAuth callback
     const callbackFunction = new lambda.Function(this, 'CallbackFunction', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'callback.handler',
-      code: lambda.Code.fromAsset(path.join(__dirname, '../../backend/functions')),
+      code: lambdaCode,
       environment: {
         FRONTEND_URL: `https://${CUSTOM_DOMAIN}`,
         PARAMETER_STORE_PREFIX: parameterStorePrefix,
       },
       timeout: cdk.Duration.seconds(30),
+      memorySize: 256,
     });
 
-    // Lambda function for app proxy requests (optional)
+    // Lambda function for app proxy requests
     const proxyFunction = new lambda.Function(this, 'ProxyFunction', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'proxy.handler',
-      code: lambda.Code.fromAsset(path.join(__dirname, '../../backend/functions')),
+      code: lambdaCode,
       environment: {
         PARAMETER_STORE_PREFIX: parameterStorePrefix,
       },
       timeout: cdk.Duration.seconds(30),
+      memorySize: 256,
     });
 
     // Lambda function for fetching store statistics
     const statsFunction = new lambda.Function(this, 'StatsFunction', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'stats.handler',
-      code: lambda.Code.fromAsset(path.join(__dirname, '../../backend/functions')),
+      code: lambdaCode,
       environment: {
         PARAMETER_STORE_PREFIX: parameterStorePrefix,
         STATS_CACHE_TABLE: statsCacheTable.tableName,
-        CACHE_TTL_SECONDS: '3600', // 1 hour cache
+        CACHE_TTL_SECONDS: '3600',
       },
       timeout: cdk.Duration.seconds(30),
+      memorySize: 256,
     });
 
     // Lambda function for disconnecting a store
     const disconnectFunction = new lambda.Function(this, 'DisconnectFunction', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'disconnect.handler',
-      code: lambda.Code.fromAsset(path.join(__dirname, '../../backend/functions')),
+      code: lambdaCode,
       environment: {
         PARAMETER_STORE_PREFIX: parameterStorePrefix,
         STATS_CACHE_TABLE: statsCacheTable.tableName,
       },
       timeout: cdk.Duration.seconds(30),
+      memorySize: 256,
     });
 
-    // Grant DynamoDB permissions to stats function
-    statsCacheTable.grantReadWriteData(statsFunction);
+    // Lambda function for GDPR compliance webhooks
+    const gdprFunction = new lambda.Function(this, 'GdprFunction', {
+      runtime: lambda.Runtime.PYTHON_3_12,
+      handler: 'gdpr.handler',
+      code: lambdaCode,
+      environment: {
+        PARAMETER_STORE_PREFIX: parameterStorePrefix,
+      },
+      timeout: cdk.Duration.seconds(30),
+      memorySize: 256,
+    });
 
-    // Grant DynamoDB permissions to disconnect function (for cache cleanup)
+    // ==================== Permissions ====================
+
+    // Grant DynamoDB permissions
+    statsCacheTable.grantReadWriteData(statsFunction);
     statsCacheTable.grantReadWriteData(disconnectFunction);
 
     // Grant Parameter Store permissions to Lambda functions
-    // Includes GetParametersByPath for multi-app credential loading
     const parameterStorePolicy = new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
       actions: [
@@ -157,21 +180,24 @@ export class ShopifyAppStack extends cdk.Stack {
     proxyFunction.addToRolePolicy(parameterStorePolicy);
     statsFunction.addToRolePolicy(parameterStorePolicy);
     disconnectFunction.addToRolePolicy(parameterStorePolicy);
+    gdprFunction.addToRolePolicy(parameterStorePolicy);
 
-    // API Gateway
+    // ==================== API Gateway ====================
+
     const api = new apigateway.RestApi(this, 'ShopifyApi', {
-      restApiName: 'Shopify App API',
-      description: 'API for Shopify app OAuth and webhooks',
+      restApiName: 'Duxly Connection API',
+      description: 'API for Duxly Connection Shopify app',
       deployOptions: {
         stageName: 'prod',
       },
       defaultCorsPreflightOptions: {
         allowOrigins: apigateway.Cors.ALL_ORIGINS,
         allowMethods: apigateway.Cors.ALL_METHODS,
+        allowHeaders: ['Content-Type', 'Authorization'],
       },
     });
 
-    // API Routes
+    // Main API Routes
     const auth = api.root.addResource('auth');
     auth.addMethod('GET', new apigateway.LambdaIntegration(authFunction));
 
@@ -187,12 +213,26 @@ export class ShopifyAppStack extends cdk.Stack {
     const disconnect = api.root.addResource('disconnect');
     disconnect.addMethod('POST', new apigateway.LambdaIntegration(disconnectFunction));
 
-    // Add APP_URL to Lambda functions after API Gateway is created
-    // This resolves the circular dependency issue - api.url is a CloudFormation token
-    authFunction.addEnvironment('APP_URL', api.url);
-    callbackFunction.addEnvironment('APP_URL', api.url);
+    // GDPR Webhook Routes
+    const webhooks = api.root.addResource('webhooks');
+    const gdpr = webhooks.addResource('gdpr');
 
-    // Outputs
+    const customersDataRequest = gdpr.addResource('customers_data_request');
+    customersDataRequest.addMethod('POST', new apigateway.LambdaIntegration(gdprFunction));
+
+    const customersRedact = gdpr.addResource('customers_redact');
+    customersRedact.addMethod('POST', new apigateway.LambdaIntegration(gdprFunction));
+
+    const shopRedact = gdpr.addResource('shop_redact');
+    shopRedact.addMethod('POST', new apigateway.LambdaIntegration(gdprFunction));
+
+    // Add APP_URL environment variable (constructed to avoid circular dependency)
+    const apiUrl = `https://${api.restApiId}.execute-api.${this.region}.amazonaws.com/prod/`;
+    authFunction.addEnvironment('APP_URL', apiUrl);
+    callbackFunction.addEnvironment('APP_URL', apiUrl);
+
+    // ==================== Outputs ====================
+
     new cdk.CfnOutput(this, 'ApiUrl', {
       value: api.url,
       description: 'API Gateway URL',
@@ -203,9 +243,23 @@ export class ShopifyAppStack extends cdk.Stack {
       description: 'Custom Domain URL',
     });
 
+    new cdk.CfnOutput(this, 'CloudFrontUrl', {
+      value: `https://${distribution.distributionDomainName}`,
+      description: 'CloudFront Distribution URL (update DNS to point to this)',
+    });
+
     new cdk.CfnOutput(this, 'FrontendBucketName', {
       value: frontendBucket.bucketName,
-      description: 'S3 Bucket for frontend',
+      description: 'S3 Bucket for frontend deployment',
+    });
+
+    new cdk.CfnOutput(this, 'GdprWebhookUrls', {
+      value: [
+        `customers/data_request: ${api.url}webhooks/gdpr/customers_data_request`,
+        `customers/redact: ${api.url}webhooks/gdpr/customers_redact`,
+        `shop/redact: ${api.url}webhooks/gdpr/shop_redact`,
+      ].join('\n'),
+      description: 'GDPR Webhook URLs for Shopify Partner Dashboard',
     });
   }
 }
