@@ -3,7 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="shopify-api-key" content="%VITE_SHOPIFY_API_KEY%" />
+    <script>
+      (function() {
+        var params = new URLSearchParams(window.location.search);
+        var apiKey = params.get('client_id') || "%VITE_SHOPIFY_API_KEY%";
+        if (apiKey) {
+          var meta = document.createElement('meta');
+          meta.name = 'shopify-api-key';
+          meta.content = apiKey;
+          document.head.appendChild(meta);
+        }
+      })();
+    </script>
     <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
     <title>Duxly Connection App</title>
   </head>

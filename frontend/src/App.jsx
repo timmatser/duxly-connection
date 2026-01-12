@@ -4,8 +4,12 @@ import Dashboard from './components/Dashboard';
 import ConnectScreen from './components/ConnectScreen';
 
 // Get the Shopify API key (client_id) for this app
-// This is set at build time and must match the app registration
-const SHOPIFY_API_KEY = import.meta.env.VITE_SHOPIFY_API_KEY;
+// Dynamically read from URL parameter, fallback to build-time env var
+const getApiKey = () => {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('client_id') || import.meta.env.VITE_SHOPIFY_API_KEY;
+};
+const SHOPIFY_API_KEY = getApiKey();
 
 function App() {
   const [shop, setShop] = useState(null);
