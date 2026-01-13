@@ -24,7 +24,7 @@ import OnboardingTimeline from './OnboardingTimeline';
 import DisconnectModal from './DisconnectModal';
 import SecurityBadge from './SecurityBadge';
 
-function Dashboard({ shop, installed }) {
+function Dashboard({ shop, installed, onAuthRequired }) {
   // Connection status - could be 'connected', 'syncing', or 'disconnected'
   const connectionStatus = 'connected';
 
@@ -86,7 +86,7 @@ function Dashboard({ shop, installed }) {
 
         {/* Store Statistics */}
         <Layout.Section>
-          <StatsGrid shop={shop} />
+          <StatsGrid shop={shop} onAuthRequired={onAuthRequired} />
         </Layout.Section>
 
         {/* Action Buttons Section */}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AppProvider } from '@shopify/polaris';
 import Dashboard from './components/Dashboard';
 import ConnectScreen from './components/ConnectScreen';
@@ -16,6 +16,14 @@ function App() {
   const [isEmbedded, setIsEmbedded] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isDisconnected, setIsDisconnected] = useState(false);
+
+  // Handle auth required - redirect to OAuth flow
+  const handleAuthRequired = useCallback(() => {
+    if (shop) {
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      window.location.href = `${apiUrl}/auth?shop=${encodeURIComponent(shop)}&client_id=${encodeURIComponent(SHOPIFY_API_KEY)}`;
+    }
+  }, [shop]);
 
   useEffect(() => {
     // Get shop and host from URL parameters
@@ -76,7 +84,7 @@ function App() {
   // App is embedded - App Bridge CDN is auto-initialized
   return (
     <AppProvider>
-      <Dashboard shop={shop} installed={isInstalled} />
+      <Dashboard shop={shop} installed={isInstalled} onAuthRequired={handleAuthRequired} />
     </AppProvider>
   );
 }

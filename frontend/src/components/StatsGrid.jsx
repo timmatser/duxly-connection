@@ -74,7 +74,7 @@ function formatLastUpdated(isoString) {
  * Displays store statistics in a 3-column grid
  * Uses session token authentication for secure API access
  */
-function StatsGrid({ shop, apiUrl }) {
+function StatsGrid({ shop, apiUrl, onAuthRequired }) {
   const { authenticatedFetch } = useSessionToken();
 
   const [stats, setStats] = useState({
@@ -113,6 +113,13 @@ function StatsGrid({ shop, apiUrl }) {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        // If credentials not found, trigger OAuth flow
+        if (response.status === 404 && errorData.message?.includes('No credentials')) {
+          if (onAuthRequired) {
+            onAuthRequired();
+            return;
+          }
+        }
         throw new Error(errorData.message || `Failed to fetch stats: ${response.statusText}`);
       }
 
