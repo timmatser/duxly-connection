@@ -16,7 +16,7 @@ const { getShopAccessToken } = require('./credentials');
 const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION || 'eu-central-1' });
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
 
-const API_VERSION = '2024-01';
+const API_VERSION = '2025-07';
 const CACHE_TABLE = process.env.STATS_CACHE_TABLE || 'shopify-stats-cache';
 const CACHE_TTL_SECONDS = parseInt(process.env.CACHE_TTL_SECONDS || '3600', 10); // Default 1 hour
 
