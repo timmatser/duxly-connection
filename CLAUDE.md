@@ -136,26 +136,26 @@ Current deployment (managed by CDK stack `duxly-connection`):
 
 | Resource | Value |
 |----------|-------|
-| **API Gateway URL** | `https://wsrvuo1fz2.execute-api.eu-central-1.amazonaws.com/prod/` |
-| **S3 Bucket** | `duxly-connection-frontendbucketefe2e19c-xekg8hoi7rux` |
-| **CloudFront Distribution ID** | `EV9FR86RWSUJO` |
-| **CloudFront Domain** | `d7jlhqhgvrgy8.cloudfront.net` |
+| **API Gateway URL** | `https://gtuslbu8gk.execute-api.eu-central-1.amazonaws.com/prod/` |
+| **S3 Bucket** | `duxly-connection-frontendbucketefe2e19c-u6sysn8kdrtf` |
+| **CloudFront Distribution ID** | `E1A90KM23V5N3Y` |
+| **CloudFront Domain** | `d2lfwrslf9fyor.cloudfront.net` |
 | **DynamoDB Table** | `shopify-stats-cache` |
 
 **Note:** `connections.duxly.eu` is a separate Admin UI for internal management, not related to the Shopify embedded app.
 
 ### GDPR Webhook URLs
 ```
-customers/data_request: https://wsrvuo1fz2.execute-api.eu-central-1.amazonaws.com/prod/webhooks/gdpr/customers_data_request
-customers/redact: https://wsrvuo1fz2.execute-api.eu-central-1.amazonaws.com/prod/webhooks/gdpr/customers_redact
-shop/redact: https://wsrvuo1fz2.execute-api.eu-central-1.amazonaws.com/prod/webhooks/gdpr/shop_redact
+customers/data_request: https://gtuslbu8gk.execute-api.eu-central-1.amazonaws.com/prod/webhooks/gdpr/customers_data_request
+customers/redact: https://gtuslbu8gk.execute-api.eu-central-1.amazonaws.com/prod/webhooks/gdpr/customers_redact
+shop/redact: https://gtuslbu8gk.execute-api.eu-central-1.amazonaws.com/prod/webhooks/gdpr/shop_redact
 ```
 
 ## Shopify App Configuration
 
 Required settings in Shopify Partners Dashboard (managed via TOML files):
-- **App URL**: `https://d7jlhqhgvrgy8.cloudfront.net` (shared CloudFront distribution)
-- **Allowed redirect URL**: `https://wsrvuo1fz2.execute-api.eu-central-1.amazonaws.com/prod/callback`
+- **App URL**: `https://d2lfwrslf9fyor.cloudfront.net` (shared CloudFront distribution)
+- **Allowed redirect URL**: `https://gtuslbu8gk.execute-api.eu-central-1.amazonaws.com/prod/callback`
 - **Embedded app**: Enabled
 
 Deploy changes using: `shopify app deploy --config shopify.app.{appId}.toml --force`
@@ -182,7 +182,7 @@ Each registration:
 - Cache keys include app ID to keep data separate: `{appId}:{shop}`
 
 **Frontend (shared):**
-- All app registrations share the same S3 bucket + CloudFront distribution (`d7jlhqhgvrgy8.cloudfront.net`)
+- All app registrations share the same S3 bucket + CloudFront distribution (`d2lfwrslf9fyor.cloudfront.net`)
 - Frontend reads `SHOPIFY_API_KEY` from Shopify App Bridge context (no build-time baking needed)
 - App ID is derived from the client_id at runtime
 
@@ -206,7 +206,7 @@ For authenticated endpoints (stats, disconnect):
    aws ssm put-parameter --name "/shopify/duxly-connection/apps/{appId}/status" --value "active" --type String
    ```
 3. **Create TOML file** `shopify.app.{appId}.toml` with:
-   - `application_url = "https://d7jlhqhgvrgy8.cloudfront.net"`
+   - `application_url = "https://d2lfwrslf9fyor.cloudfront.net"`
    - `redirect_urls` pointing to the shared API Gateway callback
    - GDPR webhook URLs
 4. **Deploy with Shopify CLI:**
