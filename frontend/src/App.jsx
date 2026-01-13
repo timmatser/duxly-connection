@@ -17,11 +17,20 @@ function App() {
   const [isInstalled, setIsInstalled] = useState(false);
   const [isDisconnected, setIsDisconnected] = useState(false);
 
-  // Handle auth required - redirect to OAuth flow
+  // Handle auth required - redirect to OAuth flow using App Bridge for top-level navigation
   const handleAuthRequired = useCallback(() => {
     if (shop) {
       const apiUrl = import.meta.env.VITE_API_URL || '';
-      window.location.href = `${apiUrl}/auth?shop=${encodeURIComponent(shop)}&client_id=${encodeURIComponent(SHOPIFY_API_KEY)}`;
+      const authUrl = `${apiUrl}/auth?shop=${encodeURIComponent(shop)}&client_id=${encodeURIComponent(SHOPIFY_API_KEY)}`;
+      
+      // Use App Bridge to redirect the top-level window (not the iframe)
+      // The CDN-loaded App Bridge exposes window.shopify
+      if (window.shopify?.redirectTo) {
+        window.shopify.redirectTo(authUrl);
+      } else {
+        // Fallback: break out of iframe
+        window.top.location.href = authUrl;
+      }
     }
   }, [shop]);
 
