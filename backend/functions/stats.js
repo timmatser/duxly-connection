@@ -108,7 +108,7 @@ async function getVariantCount(shop, accessToken) {
 
   const query = `
     query {
-      productVariantsCount {
+      productVariantsCount(limit: null) {
         count
       }
     }
