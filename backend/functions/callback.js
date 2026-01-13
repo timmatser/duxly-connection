@@ -123,12 +123,15 @@ exports.handler = async (event) => {
     }
 
     // Exchange code for access token
+    console.log(`Exchanging code for token: shop=${shop}, clientId=${appCredentials.clientId}`);
     const tokenData = await exchangeCodeForToken(
       shop,
       code,
       appCredentials.clientId,
       appCredentials.clientSecret
     );
+
+    console.log(`Token exchange response: access_token prefix=${tokenData.access_token?.substring(0, 10)}, scope=${tokenData.scope}`);
 
     // Store credentials in Parameter Store under /shops/{appId}/{shop}/
     await storeShopCredentials(app, shop, tokenData.access_token, tokenData.scope);

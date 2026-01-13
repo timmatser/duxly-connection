@@ -281,9 +281,11 @@ exports.handler = async (event) => {
     }
 
     // Get access token from Parameter Store
+    console.log(`Looking up credentials for shop=${shop}, appId=${appId}`);
     let accessToken;
     try {
       accessToken = await getShopAccessToken(appId, shop);
+      console.log(`Retrieved access token prefix: ${accessToken?.substring(0, 10)}`);
     } catch (error) {
       console.error(`Failed to get access token for ${shop} (app: ${appId}):`, error.message);
       return {
