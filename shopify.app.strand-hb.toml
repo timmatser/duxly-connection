@@ -8,7 +8,7 @@ client_id = "084fc00f54ea11b15cfd5abdc4791126"
 handle = "duxly-connection-strand-hb"
 
 # App URLs
-application_url = "https://d7jlhqhgvrgy8.cloudfront.net"
+application_url = "https://d7jlhqhgvrgy8.cloudfront.net/?client_id=084fc00f54ea11b15cfd5abdc4791126"
 embedded = true
 
 # Access Scopes
