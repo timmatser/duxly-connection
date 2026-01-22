@@ -28,18 +28,30 @@ function sleep(ms) {
 }
 
 /**
- * Make API call to Shopify with retry logic for rate limiting
+ * Fetch all counts using a single GraphQL query
+ * As of API 2025-07, count fields require limit: null for uncapped counts
  */
-async function callShopifyApi(shop, accessToken, endpoint, maxRetries = 3) {
-  const url = `https://${shop}/admin/api/${API_VERSION}/${endpoint}`;
+async function getAllCounts(shop, accessToken, maxRetries = 3) {
+  const url = `https://${shop}/admin/api/${API_VERSION}/graphql.json`;
+
+  const query = `
+    query {
+      productsCount(limit: null) { count }
+      ordersCount(limit: null) { count }
+      customersCount(limit: null) { count }
+      productVariantsCount(limit: null) { count }
+      collectionsCount(limit: null) { count }
+    }
+  `;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     const response = await fetch(url, {
-      method: 'GET',
+      method: 'POST',
       headers: {
         'X-Shopify-Access-Token': accessToken,
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({ query }),
     });
 
     // Handle rate limiting (429)
@@ -58,82 +70,23 @@ async function callShopifyApi(shop, accessToken, endpoint, maxRetries = 3) {
     }
 
     if (!response.ok) {
-      throw new Error(`Shopify API error: ${response.status} ${response.statusText}`);
+      throw new Error(`GraphQL error: ${response.status}`);
     }
 
-    return await response.json();
-  }
-}
+    const data = await response.json();
 
-/**
- * Fetch product count
- */
-async function getProductCount(shop, accessToken) {
-  const data = await callShopifyApi(shop, accessToken, 'products/count.json');
-  return data.count;
-}
-
-/**
- * Fetch order count
- */
-async function getOrderCount(shop, accessToken) {
-  const data = await callShopifyApi(shop, accessToken, 'orders/count.json?status=any');
-  return data.count;
-}
-
-/**
- * Fetch customer count
- */
-async function getCustomerCount(shop, accessToken) {
-  const data = await callShopifyApi(shop, accessToken, 'customers/count.json');
-  return data.count;
-}
-
-/**
- * Fetch collection count (custom + smart collections)
- */
-async function getCollectionCount(shop, accessToken) {
-  const [customData, smartData] = await Promise.all([
-    callShopifyApi(shop, accessToken, 'custom_collections/count.json'),
-    callShopifyApi(shop, accessToken, 'smart_collections/count.json'),
-  ]);
-  return (customData.count || 0) + (smartData.count || 0);
-}
-
-/**
- * Fetch variant count using GraphQL
- */
-async function getVariantCount(shop, accessToken) {
-  const url = `https://${shop}/admin/api/${API_VERSION}/graphql.json`;
-
-  const query = `
-    query {
-      productVariantsCount(limit: null) {
-        count
-      }
+    if (data.errors) {
+      throw new Error(`GraphQL error: ${data.errors[0]?.message}`);
     }
-  `;
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'X-Shopify-Access-Token': accessToken,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ query }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`GraphQL error: ${response.status}`);
+    return {
+      products: data.data?.productsCount?.count ?? null,
+      orders: data.data?.ordersCount?.count ?? null,
+      customers: data.data?.customersCount?.count ?? null,
+      variants: data.data?.productVariantsCount?.count ?? null,
+      collections: data.data?.collectionsCount?.count ?? null,
+    };
   }
-
-  const data = await response.json();
-
-  if (data.errors) {
-    throw new Error(`GraphQL error: ${data.errors[0]?.message}`);
-  }
-
-  return data.data?.productVariantsCount?.count || 0;
 }
 
 
@@ -298,41 +251,33 @@ exports.handler = async (event) => {
       };
     }
 
-    // Fetch all stats in parallel
-    const [productCount, orderCount, customerCount, variantCount, collectionCount] = await Promise.all([
-      getProductCount(shop, accessToken).catch(err => {
-        console.error('Failed to fetch product count:', err.message);
-        return null;
-      }),
-      getOrderCount(shop, accessToken).catch(err => {
-        console.error('Failed to fetch order count:', err.message);
-        return null;
-      }),
-      getCustomerCount(shop, accessToken).catch(err => {
-        console.error('Failed to fetch customer count:', err.message);
-        return null;
-      }),
-      getVariantCount(shop, accessToken).catch(err => {
-        console.error('Failed to fetch variant count:', err.message);
-        return null;
-      }),
-      getCollectionCount(shop, accessToken).catch(err => {
-        console.error('Failed to fetch collection count:', err.message);
-        return null;
-      }),
-    ]);
+    // Fetch all stats using single GraphQL query
+    let counts;
+    try {
+      counts = await getAllCounts(shop, accessToken);
+    } catch (err) {
+      console.error('Failed to fetch counts:', err.message);
+      return {
+        statusCode: 500,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          error: 'Failed to fetch statistics',
+          message: err.message,
+        }),
+      };
+    }
 
     const stats = {
-      products: productCount,
-      orders: orderCount,
-      customers: customerCount,
-      variants: variantCount,
-      collections: collectionCount,
+      products: counts.products,
+      orders: counts.orders,
+      customers: counts.customers,
+      variants: counts.variants,
+      collections: counts.collections,
       fetchedAt: new Date().toISOString(),
     };
 
     // Check if any core stats failed to load
-    const hasErrors = productCount === null || orderCount === null || customerCount === null;
+    const hasErrors = counts.products === null || counts.orders === null || counts.customers === null;
 
     // Cache the stats (only if no errors)
     if (!hasErrors) {
