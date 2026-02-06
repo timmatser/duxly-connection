@@ -113,14 +113,17 @@ function StatsGrid({ shop, apiUrl, onAuthRequired }) {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        // If credentials not found, trigger OAuth flow
-        if (response.status === 404 && errorData.message?.includes('No credentials')) {
+        // If credentials not found or access token expired, trigger OAuth flow
+        if (
+          (response.status === 404 && errorData.message?.includes('No credentials')) ||
+          (response.status === 401 && errorData.requiresReauth)
+        ) {
           if (onAuthRequired) {
             onAuthRequired();
             return;
           }
         }
-        throw new Error(errorData.message || `Failed to fetch stats: ${response.statusText}`);
+        throw new Error(errorData.error || 'Unable to load store data. Please try again.');
       }
 
       const data = await response.json();

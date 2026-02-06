@@ -69,6 +69,12 @@ async function getAllCounts(shop, accessToken, maxRetries = 3) {
       throw new Error('Rate limited: Too many requests to Shopify API');
     }
 
+    if (response.status === 401 || response.status === 403) {
+      const err = new Error('Store access token is invalid or expired');
+      err.shopifyStatus = response.status;
+      throw err;
+    }
+
     if (!response.ok) {
       throw new Error(`GraphQL error: ${response.status}`);
     }
@@ -257,6 +263,19 @@ exports.handler = async (event) => {
       counts = await getAllCounts(shop, accessToken);
     } catch (err) {
       console.error('Failed to fetch counts:', err.message);
+
+      // Shopify returned 401/403 — access token is invalid/expired/revoked
+      if (err.shopifyStatus === 401 || err.shopifyStatus === 403) {
+        return {
+          statusCode: 401,
+          headers: corsHeaders,
+          body: JSON.stringify({
+            error: 'Store credentials have expired. Please reinstall the app.',
+            requiresReauth: true,
+          }),
+        };
+      }
+
       return {
         statusCode: 500,
         headers: corsHeaders,

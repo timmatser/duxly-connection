@@ -14,7 +14,6 @@ import {
 import {
   ChatIcon,
   BookIcon,
-  SettingsIcon,
   ExitIcon,
 } from '@shopify/polaris-icons';
 import DashboardHeader from './DashboardHeader';
@@ -54,11 +53,6 @@ function Dashboard({ shop, installed, onAuthRequired }) {
   const handleReadDocumentation = () => {
     // Opens documentation in new tab
     window.open('https://docs.duxly.com', '_blank');
-  };
-
-  const handleConfigureSettings = () => {
-    // Navigate to settings page (placeholder for now)
-    console.log('Navigate to settings');
   };
 
   return (
@@ -110,13 +104,6 @@ function Dashboard({ shop, installed, onAuthRequired }) {
                   onClick={handleReadDocumentation}
                 >
                   Read Documentation
-                </Button>
-                <Button
-                  variant="secondary"
-                  icon={SettingsIcon}
-                  onClick={handleConfigureSettings}
-                >
-                  Configure Settings
                 </Button>
               </InlineStack>
             </BlockStack>
