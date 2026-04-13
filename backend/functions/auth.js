@@ -84,7 +84,7 @@ exports.handler = async (event) => {
     const appUrl = (process.env.APP_URL || '').replace(/\/$/, ''); // Remove trailing slash
 
     // Required OAuth scopes for your app
-    const scopes = 'read_products,write_products,read_orders,read_customers';
+    const scopes = 'read_products,write_products,read_orders,read_customers,read_translations,write_translations,read_locales,read_inventory,write_inventory,read_locations';
 
     // Generate a random nonce for security
     const nonce = crypto.randomBytes(16).toString('hex');
