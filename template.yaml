@@ -15,7 +15,7 @@ Parameters:
 
 Globals:
   Function:
-    Runtime: nodejs20.x
+    Runtime: nodejs22.x
     Timeout: 30
     MemorySize: 512
     Environment:
@@ -41,7 +41,7 @@ Resources:
       Handler: auth.handler
       Environment:
         Variables:
-          APP_URL: 'https://2hhksu7ni9.execute-api.eu-central-1.amazonaws.com/prod'
+          APP_URL: 'https://lf3gyfp569.execute-api.eu-central-1.amazonaws.com/prod'
       Policies:
         - Statement:
             - Effect: Allow
