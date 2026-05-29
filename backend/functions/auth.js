@@ -9,7 +9,7 @@
  */
 
 const crypto = require('crypto');
-const { getAppCredentials, findAppByClientId } = require('./credentials');
+const { getAppCredentials, findAppByClientId, getAppScopes } = require('./credentials');
 
 exports.handler = async (event) => {
   try {
@@ -83,8 +83,21 @@ exports.handler = async (event) => {
 
     const appUrl = (process.env.APP_URL || '').replace(/\/$/, ''); // Remove trailing slash
 
-    // Required OAuth scopes for your app
-    const scopes = 'read_products,write_products,read_orders,read_customers,read_translations,write_translations,read_locales,read_inventory,write_inventory,read_locations';
+    // OAuth scopes. Per-app scopes are read from Parameter Store
+    // (/apps/{appId}/scopes) so each client requests only what its project needs
+    // (e.g. Acelera's returns/refund scopes). Falls back to this default — which
+    // preserves the previous behaviour for every app without a per-app scopes param.
+    const DEFAULT_SCOPES = 'read_products,write_products,read_orders,read_customers,read_translations,write_translations,read_locales,read_inventory,write_inventory,read_locations';
+    let scopes = DEFAULT_SCOPES;
+    try {
+      const appScopes = await getAppScopes(appId);
+      if (appScopes) {
+        scopes = appScopes;
+        console.log(`Using per-app scopes for ${appId}`);
+      }
+    } catch (error) {
+      console.error(`Failed to load per-app scopes for ${appId}, using defaults:`, error.message);
+    }
 
     // Generate a random nonce for security
     const nonce = crypto.randomBytes(16).toString('hex');

@@ -181,8 +181,31 @@ async function findAppByClientId(clientId) {
   return credentials[clientId] || null;
 }
 
+/**
+ * Get the OAuth scopes configured for an app from Parameter Store.
+ * Lets each app request only the scopes its project needs, instead of one
+ * hardcoded list shared by every client. Returns null when no per-app scopes
+ * param exists, so the caller can fall back to a default.
+ * @param {string} appId - The app identifier
+ * @returns {Promise<string|null>} Comma-separated scope string, or null
+ */
+async function getAppScopes(appId) {
+  try {
+    const response = await ssmClient.send(new GetParameterCommand({
+      Name: `${PREFIX}/apps/${appId}/scopes`,
+      WithDecryption: false,
+    }));
+    const value = (response.Parameter.Value || '').trim();
+    return value || null;
+  } catch (err) {
+    if (err.name === 'ParameterNotFound') return null;
+    throw err;
+  }
+}
+
 module.exports = {
   getAppCredentials,
+  getAppScopes,
   getShopAccessToken,
   storeShopCredentials,
   deleteShopCredentials,
