@@ -21,11 +21,11 @@
 name = "Duxly Connection Acelera"
 # client_id is minted when the app registration is created (Shopify Partner dashboard
 # → Duxly Connection Admin). Replace the placeholder below before `shopify app config link`.
-client_id = "REPLACE_AFTER_PARTNER_APP_CREATION"
+client_id = "e06cb96344fef3cbf351544423e6682b"
 handle = "duxly-connection-acelera"
 
 # App URLs
-application_url = "https://d23dbydr2m94fv.cloudfront.net/?client_id=REPLACE_AFTER_PARTNER_APP_CREATION"
+application_url = "https://d23dbydr2m94fv.cloudfront.net/?client_id=e06cb96344fef3cbf351544423e6682b"
 embedded = true
 
 # Access Scopes
