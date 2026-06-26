@@ -93,7 +93,7 @@ function App() {
   // App is embedded - App Bridge CDN is auto-initialized
   return (
     <AppProvider>
-      <Dashboard shop={shop} installed={isInstalled} onAuthRequired={handleAuthRequired} />
+      <Dashboard shop={shop} clientId={SHOPIFY_API_KEY} installed={isInstalled} onAuthRequired={handleAuthRequired} />
     </AppProvider>
   );
 }
