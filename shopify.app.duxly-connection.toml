@@ -20,7 +20,7 @@ embedded = true
 # (/shopify/duxly-connection/apps/duxly-connection/scopes) only shapes the
 # OAuth request URL and is overridden by this list.
 [access_scopes]
-scopes = "read_products,write_products,read_orders,write_orders,read_customers,write_customers,read_translations,write_translations,read_locales,read_inventory,write_inventory,read_locations,write_locations,write_inventory_transfers,read_inventory_shipments,read_inventory_shipments_received_items,write_draft_orders,write_merchant_managed_fulfillment_orders,write_assigned_fulfillment_orders"
+scopes = "read_products,write_products,read_orders,write_orders,read_customers,write_customers,read_translations,write_translations,read_locales,read_inventory,write_inventory,read_locations,write_locations,write_inventory_transfers,write_inventory_shipments,write_inventory_shipments_received_items,write_draft_orders,write_merchant_managed_fulfillment_orders,write_assigned_fulfillment_orders"
 use_legacy_install_flow = false
 
 # Authentication
