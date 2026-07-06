@@ -11,8 +11,16 @@ application_url = "https://d23dbydr2m94fv.cloudfront.net/?client_id=79f672bb13bc
 embedded = true
 
 # Access Scopes
+# 2026-07-06: extended with inventory-transfer/shipment/draft-order/order/
+# fulfillment/customer/location/inventory scopes so the master demo app can
+# serve as the token source for the hartbeach-transfers-and-orders bridge's
+# dev pair (duxlydemo + quickstart-af2e1cfa). This app is installed on Duxly
+# demo stores only. NOTE: this app uses Shopify-managed installation, so the
+# scopes declared HERE are what gets granted — the per-app scopes SSM param
+# (/shopify/duxly-connection/apps/duxly-connection/scopes) only shapes the
+# OAuth request URL and is overridden by this list.
 [access_scopes]
-scopes = "read_products,write_products,read_orders,read_customers,read_translations,write_translations,read_locales"
+scopes = "read_products,write_products,read_orders,write_orders,read_customers,write_customers,read_translations,write_translations,read_locales,read_inventory,write_inventory,read_locations,write_locations,write_inventory_transfers,read_inventory_shipments,read_inventory_shipments_received_items,write_draft_orders,write_merchant_managed_fulfillment_orders,write_assigned_fulfillment_orders"
 use_legacy_install_flow = false
 
 # Authentication
