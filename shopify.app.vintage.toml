@@ -12,7 +12,7 @@ embedded = true
 
 # Access Scopes
 [access_scopes]
-scopes = "read_products,write_products,read_orders,read_customers,read_translations,write_translations,read_locales,read_inventory,read_locations"
+scopes = "read_products,write_products,read_orders,read_customers,read_translations,write_translations,read_locales,read_inventory,read_locations,read_publications,write_publications,read_markets"
 use_legacy_install_flow = false
 
 # Authentication
