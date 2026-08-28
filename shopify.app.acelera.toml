@@ -4,6 +4,10 @@
 # Project: IT architecture discovery — returns, orders & refunds.
 # Scopes below are scoped to THIS project's needs (returns-first architecture):
 #   read_orders/write_orders ........... order data + refund actions
+#   read_all_orders .................... orders older than 60 days. PROTECTED scope,
+#       granted by Shopify 2026-08-28. Without it the Admin API serves only the last
+#       60 days on EVERY path (search, order(id:), orderByIdentifier) — measured, and
+#       it stranded 16 of 1016 refunds on needs_review:order_outside_api_window.
 #   read_returns/write_returns ......... Returns API — core of the project (return requests, return-label flow)
 #   read_fulfillments/write_fulfillments  fulfillment + tracking
 #   *_assigned_fulfillment_orders ...... fulfillment-order lifecycle
@@ -30,7 +34,7 @@ embedded = true
 
 # Access Scopes
 [access_scopes]
-scopes = "read_orders,write_orders,read_returns,write_returns,read_fulfillments,write_fulfillments,read_assigned_fulfillment_orders,write_assigned_fulfillment_orders,read_merchant_managed_fulfillment_orders,write_merchant_managed_fulfillment_orders,read_third_party_fulfillment_orders,write_third_party_fulfillment_orders,read_products,read_customers,read_locations,read_shipping"
+scopes = "read_orders,write_orders,read_all_orders,read_returns,write_returns,read_fulfillments,write_fulfillments,read_assigned_fulfillment_orders,write_assigned_fulfillment_orders,read_merchant_managed_fulfillment_orders,write_merchant_managed_fulfillment_orders,read_third_party_fulfillment_orders,write_third_party_fulfillment_orders,read_products,read_customers,read_locations,read_shipping"
 use_legacy_install_flow = false
 
 # Authentication
