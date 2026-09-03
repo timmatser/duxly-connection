@@ -16,5 +16,6 @@ use_legacy_install_flow = false
 
 [auth]
 redirect_urls = [
+  "https://lf3gyfp569.execute-api.eu-central-1.amazonaws.com/prod/callback",
   "https://github.com/Duxly/store-and-style-woerden-customisation/auth/callback"
 ]
