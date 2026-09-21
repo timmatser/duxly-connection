@@ -28,6 +28,7 @@
 .guide-table {
   width: 100%;
   border-collapse: collapse;
+  overflow-wrap: normal;
   font-size: 0.875rem;
   text-align: left;
 }
