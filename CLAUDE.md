@@ -67,7 +67,7 @@ TOML). `Dashboard.jsx` looks the content up via `getAppContent(clientId)`.
 - Config: `frontend/src/config/appContent.js` — `APP_CONTENT[clientId] = { appId, name, documentation, landscape }`.
 - Renderers: `frontend/src/components/DocumentationTab.jsx`, `frontend/src/components/LandscapeTab.jsx`.
 - Vintage (`15aaeb2a0727f22bf224d544483e58ef`) and 2ehands (`5925fb6a5a22cf0efbedc885d0d831c9`)
-  share one Dutch client manual; source of truth for maintainers is ClickUp doc `8cnw4jt-13735`.
+  share one Dutch client manual; source of truth for maintainers is ClickUp doc `8cnw4jt-14735`.
 - Apps without an entry fall back to `DEFAULT_CONTENT` → only the Overview tab shows.
 
 **To add a new client's content:**

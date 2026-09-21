@@ -10,6 +10,7 @@ import {
   Link,
   Divider,
 } from '@shopify/polaris';
+import { GuideBlocks } from './GuideBlocks';
 
 /**
  * Renders one manual section in a fixed, readable order:
@@ -112,10 +113,11 @@ function DocumentationTab({ documentation }) {
   const { title, subtitle, updated, sections, sources } = documentation;
 
   return (
+    <article className="client-guide" lang={documentation.language || 'nl'} aria-label={title}>
     <BlockStack gap="400">
       <Box paddingBlockStart="200">
         <BlockStack gap="200">
-          <InlineStack gap="200" blockAlign="center" wrap={false}>
+          <InlineStack gap="200" blockAlign="center">
             <Text variant="headingLg" as="h2">
               {title}
             </Text>
@@ -129,8 +131,36 @@ function DocumentationTab({ documentation }) {
         </BlockStack>
       </Box>
 
+      {documentation.intro && (
+        <Card><GuideBlocks blocks={documentation.intro} label={title} /></Card>
+      )}
+
+      {sections?.every((section) => section.id) && (
+        <Card>
+          <nav aria-label="Inhoudsopgave">
+            <BlockStack gap="200">
+              <Text as="h3" variant="headingMd">Inhoudsopgave</Text>
+              <List type="bullet">
+                {sections.map((section) => (
+                  <List.Item key={section.id}><Link url={`#${section.id}`}>{section.heading}</Link></List.Item>
+                ))}
+              </List>
+            </BlockStack>
+          </nav>
+        </Card>
+      )}
+
       {sections?.map((section, i) => (
-        <Section key={`sec-${i}`} section={section} />
+        section.blocks ? (
+          <section key={section.id || i} id={section.id} aria-labelledby={`${section.id}-heading`}>
+            <Card>
+              <BlockStack gap="300">
+                <Text as="h3" variant="headingMd" id={`${section.id}-heading`}>{section.heading}</Text>
+                <GuideBlocks blocks={section.blocks} label={section.heading} />
+              </BlockStack>
+            </Card>
+          </section>
+        ) : <Section key={`sec-${i}`} section={section} />
       ))}
 
       {sources?.length > 0 && (
@@ -153,6 +183,7 @@ function DocumentationTab({ documentation }) {
         </Card>
       )}
     </BlockStack>
+    </article>
   );
 }
 
