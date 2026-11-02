@@ -218,6 +218,7 @@ Each Shopify client gets their own custom distribution app registration. All reg
 | `duxly-connection-acelera` | Acelera | acelera-cc | `shopify.app.acelera.toml` |
 | `duxly-connection-liefs-lies` | Liefs lies | liefs-lies (perm. `70h1yr-mc`) | `shopify.app.liefs-lies.toml` |
 | `dancohr` | Dancohr | dancohr | — |
+| `duxly-connection-bedshop` | Bedshop (dev store, Lightspeed → Shopify sync; Duxly org 129939554) | bedshop-duxly | `shopify.app.bedshop.toml` |
 
 ### How It Works
 
@@ -244,7 +245,11 @@ For authenticated endpoints (stats, disconnect):
 ## Installing a New Custom App for a Client
 
 ### Step 1: Create app in Shopify Partners
-Go to https://partners.shopify.com/2604455/apps → Create app → Custom distribution
+Go to https://partners.shopify.com/2604455/apps → Create app → Custom distribution.
+Or from the CLI (no prompts): `shopify app init --name "Duxly Connection {ClientName}" --organization-id 129939554 --template none`
+(129939554 = Duxly e-com partners in the Dev Dashboard; the secret is in `shopify app env show` inside the generated project).
+A dev store: `shopify store create dev --name ... --organization-id 129939554 --plan basic --country NL --no-demo-data`.
+Deploy flags on the current CLI: `--allow-updates --allow-deletes` (there is no `--force`).
 
 ### Step 2: Store credentials in Parameter Store
 ```bash
