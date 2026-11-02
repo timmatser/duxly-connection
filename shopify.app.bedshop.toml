@@ -30,7 +30,7 @@ api_version = "2026-10"
 
 [access_scopes]
 # Bedshop: Lightspeed -> Shopify product sync (bedshop repo, shopify/). Orders read for phase 2.
-scopes = "read_products,write_products,read_inventory,write_inventory,read_locations,read_publications,write_publications,read_files,write_files,read_translations,write_translations,read_locales,write_locales,read_online_store_navigation,write_online_store_navigation,read_orders,read_customers,read_content,write_content,read_legal_policies,write_legal_policies,read_markets,write_markets,read_themes"
+scopes = "read_products,write_products,read_inventory,write_inventory,read_locations,read_publications,write_publications,read_files,write_files,read_translations,write_translations,read_locales,write_locales,read_online_store_navigation,write_online_store_navigation,read_orders,read_customers,read_content,write_content,read_legal_policies,write_legal_policies,read_markets,write_markets,read_themes,read_shipping,write_shipping"
 use_legacy_install_flow = false
 
 [auth]
