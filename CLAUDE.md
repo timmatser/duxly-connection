@@ -218,7 +218,7 @@ Each Shopify client gets their own custom distribution app registration. All reg
 | `duxly-connection-acelera` | Acelera | acelera-cc | `shopify.app.acelera.toml` |
 | `duxly-connection-liefs-lies` | Liefs lies | liefs-lies (perm. `70h1yr-mc`) | `shopify.app.liefs-lies.toml` |
 | `dancohr` | Dancohr | dancohr | — |
-| `duxly-connection-bedshop` | Bedshop (dev store, Lightspeed → Shopify sync; Duxly org 129939554) | bedshop-duxly | `shopify.app.bedshop.toml` |
+| `duxly-connection-bedshop` | Bedshop (client transfer store, Lightspeed → Shopify sync; Duxly org 129939554) | bedshop-shop-fg6pb1r9 | `shopify.app.bedshop.toml` |
 
 ### How It Works
 
