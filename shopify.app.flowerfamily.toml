@@ -11,8 +11,12 @@ application_url = "https://d23dbydr2m94fv.cloudfront.net/?client_id=7ebf58029ff6
 embedded = true
 
 # Access Scopes
+# 2026-11-10: read_companies/write_companies/read_payment_terms added to give
+# approved B2B companies a payment term (pay on invoice) per company location
+# and to read how current orders are paid. Shopify-managed installation: the
+# merchant must approve the new scopes in the admin before the token gets them.
 [access_scopes]
-scopes = "read_products,write_products,read_orders,read_inventory,write_inventory,read_locations"
+scopes = "read_products,write_products,read_orders,read_inventory,write_inventory,read_locations,read_companies,write_companies,read_payment_terms"
 use_legacy_install_flow = false
 
 # Authentication
