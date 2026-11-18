@@ -219,6 +219,7 @@ Each Shopify client gets their own custom distribution app registration. All reg
 | `duxly-connection-liefs-lies` | Liefs lies | liefs-lies (perm. `70h1yr-mc`) | `shopify.app.liefs-lies.toml` |
 | `dancohr` | Dancohr | dancohr | — |
 | `duxly-connection-bedshop` | Bedshop (client transfer store, Lightspeed → Shopify sync; Duxly org 129939554) | bedshop-shop-fg6pb1r9 | `shopify.app.bedshop.toml` |
+| `duxly-connection-hdw` | Handdoekwereld (Bedshop; client transfer store, Lightspeed → Shopify, stock and orders with Retail; app name "Duxly Connection HDW": names are capped at 30 characters) | handdoekwereld-epchjx5q | `shopify.app.hdw.toml` |
 
 ### How It Works
 
